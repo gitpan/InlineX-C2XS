@@ -9,7 +9,7 @@ our @ISA = qw(Exporter);
 
 our @EXPORT_OK = qw(c2xs);
 
-our $VERSION = 0.08;
+our $VERSION = 0.09;
 
 sub c2xs {
     eval {require "Inline/C.pm"};
@@ -92,6 +92,8 @@ sub c2xs {
 
     if($config_options->{AUTOWRAP}) {$o->{ILSM}{AUTOWRAP} = 1}
 
+    if($config_options->{MAKE}) {$o->{ILSM}{MAKE} = $config_options->{MAKE}}
+
     if($config_options->{TYPEMAPS}) {
       unless(ref($config_options->{TYPEMAPS}) eq 'ARRAY') {die "TYPEMAPS must be passed as an array reference"}
       $o->{ILSM}{MAKEFILE}{TYPEMAPS} = $config_options->{TYPEMAPS}; 
@@ -105,6 +107,10 @@ sub c2xs {
     bless($o, 'Inline::C');
 
     Inline::C::validate($o);
+
+    if($config_options->{CC}) {$o->{ILSM}{MAKEFILE}{CC} = $config_options->{CC}}
+
+    if($config_options->{LD}) {$o->{ILSM}{MAKEFILE}{LD} = $config_options->{LD}}
 
     if($config_options->{INC}) {$o->{ILSM}{MAKEFILE}{INC} .= " $config_options->{INC}"}
 
@@ -296,6 +302,34 @@ InlineX::C2XS - create an XS file from Inline C code.
     BUILD_NOISY => 0,
   ----
 
+  CC
+   Specify the compiler you want to use. eg:
+
+    CC => 'g++',
+  ----
+
+  LD
+   Specify the linker you want to use. eg:
+
+    LD => 'g++',
+  ----
+
+  MAKE
+   Specify the make utility you want to use. eg:
+
+    MAKE => 'pmake', # I have no idea whether that will work :-)
+  ----
+
+=head1 TODO
+
+ Add coverage (and testing) of BOOT, CCFLAGS, FILTERS, LDDLFLAGS, 
+ MYEXTLIB, OPTIMIZE and PREFIX options. (This will be done soon.)
+
+ Add testing of CC, LD, and MAKE options. (This will be done soon.)
+
+ Improve the t_makefile_pl test script. It currently provides strong 
+ indication that everything is working fine ... but is not conclusive.
+ (This might take forever.)  
   
 =head1 BUGS
 

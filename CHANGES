@@ -1,3 +1,10 @@
+- 0.09 ... Rewrite the t_makefile_pl test script. (It's now not a very
+           conclusive test ... still needs further work ... though I think
+           the WRITE_MAKEFILE_PL functionality is operating correctly.)
+           Add coverage (currently untested) for the CC, LD, and MAKE options. 
+           TODO: Add coverage for BOOT, CCFLAGS, FILTERS, LDDLFLAGS,
+           MYEXTLIB, OPTIMIZE and PREFIX options.
+
 - 0.08 ... Rename the module into the InlineX namespace (previously named
            Inline::C2XS)
            Add coverage for VERSION, LIBS, BUILD_NOISY and

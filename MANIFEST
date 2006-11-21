@@ -9,7 +9,6 @@ t/t_makefile_pl.t
 expected.h
 expected_c.txt
 expected_autowrap.txt
-expected_makefile_pl.txt
 src/Polygon.c
 src/test.c
 src/extra_simple.h
