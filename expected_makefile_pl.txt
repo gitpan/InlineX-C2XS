@@ -1,0 +1,19 @@
+use ExtUtils::MakeMaker;
+my %options = %{       
+{
+  'TYPEMAPS' => [
+    'D:\\perl58_M\\5.8.8\\lib\\ExtUtils\\typemap',
+    'src/simple_typemap.txt'
+  ],
+  'NAME' => 'test',
+  'LIBS' => [
+    '-L/anywhere -lbogus'
+  ],
+  'INC' => '-ID:/pscrpt/inline/special -Isrc',
+  'VERSION' => '0.42'
+}
+};
+WriteMakefile(%options);
+
+# Remove the Makefile dependency. Causes problems on a few systems.
+sub MY::makefile { '' }
