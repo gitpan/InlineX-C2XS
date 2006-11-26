@@ -1,11 +1,12 @@
 use warnings;
 use strict;
 use Cwd;
+use Config;
 use InlineX::C2XS qw(c2xs);
 
 # We can't have this test script write its files to the cwd - because that will
 # clobber the existing Makefile.PL. So ... we'll have it written to the cwd/src
-# directory. The following 3 lines are code are just my attempt to ensure that
+# directory. The following 3 lines of code are just my attempt to ensure that
 # the Makefile.PL does NOT get written to the cwd.  
 my $cwd = getcwd;
 my $build_dir = "${cwd}/src";
@@ -23,6 +24,13 @@ my %config_opts = (
                   'LIBS' => ['-L/anywhere -lbogus'],
                   'VERSION' => 0.42,
                   'BUILD_NOISY' => 0,
+                  'CC' => $Config{cc},
+                  'CCFLAGS' => '-DMY_DEFINE ' . $Config{ccflags},
+                  'LD' => $Config{ld},
+                  'LDDLFLAGS' => $Config{lddlflags},
+                  'MAKE' =>  $Config{make},
+                  'MYEXTLIB' => 'MANIFEST', # this test needs *only* that the file exists
+                  'OPTIMIZE' => '-g',
                   );
 
 c2xs('test', 'test', $build_dir, \%config_opts);
@@ -147,8 +155,9 @@ $ok = 0;
 # In the meantime we have the following crappy checks. If it passes
 # these tests, it's probably ok ... otherwise it may not be.
 
-my ($line1, $line2, $line3, $line4, $line5, $line6, $line7, $line8, $line9, $line10, $line11) = 
-   (0,0,0,0,0,0,0,0,0,0,0);
+my ($line1, $line2, $line3, $line4, $line5, $line6, $line7, $line8, $line9, $line10, $line11,
+    $line12, $line13, $line14, $line15, $line16, $line17, $line18) = 
+   (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0);
 
 for(@rd1) {
    if ($_ =~ /use ExtUtils::MakeMaker;/) {$line1 = 1}
@@ -162,12 +171,21 @@ for(@rd1) {
    if ($_ =~ /VERSION/ && $_ =~ /0.42/) {$line9 = 1}
    if ($_ =~ /WriteMakefile\(%options\);/) {$line10 = 1}
    if ($_ =~ /sub MY::makefile { '' }/) {$line11 = 1}
+   if ($_ =~ /CC/ && $_ =~ /\Q$Config{cc}\E/) {$line12 = 1}
+   if ($_ =~ /CCFLAGS/ && $_ =~ /\s\-DMY_DEFINE/) {$line13 = 1}
+   if ($_ =~ /LD/ && $_ =~ /\Q$Config{ld}\E/) {$line14 = 1}
+   if ($_ =~ /LDDLFLAGS/) {$line15 = 1}
+   if ($_ =~ /MAKE/ && $_ =~ /\Q$Config{make}\E/) {$line16 = 1}
+   if ($_ =~ /MYEXTLIB/ && $_ =~ /MANIFEST/) {$line17 = 1}
+   if ($_ =~ /OPTIMIZE/ && $_ =~ /\-g/) {$line18 = 1}
 }
 
-if($line1 && $line2 && $line3 && $line4 && $line5 && $line6 && $line7 && $line8 && $line9 && $line10 && $line11) {$ok = 1}
+if($line1 && $line2 && $line3 && $line4 && $line5 && $line6 && $line7 && $line8 && $line9 && $line10 && $line11
+   && $line12 && $line13 && $line14 && $line15 && $line16 && $line17 && $line18) {$ok = 1}
 
 if(!$ok) {
-  print "not ok 3 - src/Makefile.PL not properly created ", $line1, $line2, $line3, $line4, $line5, $line6, $line7, $line8, $line9, $line10, $line11, "\n";
+  print "not ok 3 - src/Makefile.PL not properly created ", $line1, $line2, $line3, $line4, $line5, $line6, $line7, $line8, $line9, $line10, $line11,
+         $line12, $line13, $line14, $line15, $line16, $line17, $line18, "\n";
   close(RD1) or print "Unable to close src/Makefile.PL after reading: $!\n";
   exit;
 }

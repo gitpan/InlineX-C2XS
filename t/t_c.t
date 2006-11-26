@@ -4,7 +4,8 @@ use InlineX::C2XS qw(c2xs);
 
 print "1..2\n";
 
-c2xs('Math::Geometry::Planar::GPC::Polygon', 'Math::Geometry::Planar::GPC::Polygon');
+c2xs('Math::Geometry::Planar::GPC::Polygon', 'Math::Geometry::Planar::GPC::Polygon', '.',
+    {PREFIX => 'remove_', BOOT => 'printf("Hi from bootstrap\n");'});
 
 if(!rename('Polygon.xs', 'Polygon.txt')) {
   print "not ok 1 - couldn't rename Polygon.xs\n";

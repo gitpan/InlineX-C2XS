@@ -22,12 +22,12 @@ Version 0.04
 #endif
 
 SV* new (char* class);
-void add_polygon(SV* obj, SV* pg, int hole);
+void remove_add_polygon(SV* obj, SV* pg, int hole);
 void DESTROY(SV* obj);
 int from_file(SV* obj, char* filename, int want_hole);
 void to_file(SV* obj, char* filename, int want_hole);
 SV* clip_to(SV* obj, SV* clp, char* action);
-void add_polygon(SV* obj, SV* pg, int hole);
+void remove_add_polygon(SV* obj, SV* pg, int hole);
 void get_polygons(SV* obj);
 void pts_to_vertex_list(SV* pg, gpc_vertex_list* vl);
 AV* vertex_list_to_pts(gpc_vertex_list* vl);
@@ -113,7 +113,7 @@ SV* clip_to(SV* obj, SV* clp, char* action) {
 	return(result);
 }
 
-void add_polygon(SV* obj, SV* pg, int hole) {
+void remove_add_polygon(SV* obj, SV* pg, int hole) {
 	gpc_polygon* p = (gpc_polygon*) SvIV(SvRV(obj));
 	dbg_p(("got my vl\n"));
 	if(p->num_contours > 0) {

@@ -1,3 +1,10 @@
+- 0.10 ... Add coverage for the PREFIX and BOOT options.
+           Add coverage for CCFLAGS, LDDLFLAGS, MYEXTLIB and OPTIMIZE (and 
+           test that they get passed to the generated Makefile.PL) Also check
+           that the CC, LD and MAKE parameters are passed on to the 
+           generated Makefile.PL. Not sure how to utilise FILTERS.
+           (I won't do anything with it unless requested.) 
+
 - 0.09 ... Rewrite the t_makefile_pl test script. (It's now not a very
            conclusive test ... still needs further work ... though I think
            the WRITE_MAKEFILE_PL functionality is operating correctly.)
