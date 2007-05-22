@@ -2,9 +2,9 @@ use warnings;
 use strict;
 use InlineX::C2XS qw(c2xs);
 
-print "1..2\n";
+print "1..7\n";
 
-c2xs('Math::Geometry::Planar::GPC::Polygon', 'Math::Geometry::Planar::GPC::Polygon', '.',
+c2xs('Math::Geometry::Planar::GPC::Polygon', 'Math::Geometry::Planar::GPC::Polygon',
     {PREFIX => 'remove_', BOOT => 'printf("Hi from bootstrap\n");'});
 
 if(!rename('Polygon.xs', 'Polygon.txt')) {
@@ -110,3 +110,28 @@ close(RD2) or print "Unable to close expected.h after reading: $!\n";
 if(!unlink('INLINE.h')) { print "Couldn't unlink INLINE.h\n"}
 
 print "ok 2\n";
+
+eval{c2xs('Math::Geometry::Planar::GPC::Polygon', 'Math::Geometry::Planar::GPC::Polygon', '.', '');};
+
+if($@ =~ /Fourth arg to c2xs/) {print "ok 3\n"}
+else {print "not ok 3\n"}
+
+eval{c2xs('Math::Geometry::Planar::GPC::Polygon', 'Math::Geometry::Planar::GPC::Polygon', '.', '');};
+
+if($@ =~ /Fourth arg to c2xs/) {print "ok 4\n"}
+else {print "not ok 4\n"}
+
+eval{c2xs('Math::Geometry::Planar::GPC::Polygon', 'Math::Geometry::Planar::GPC::Polygon', {'TYPEMAPS' => ['/foo/non/existent/typemap.txt']});};
+
+if($@ =~ /Couldn't locate the typemap \/foo\/non\/existent\/typemap\.txt/) {print "ok 5\n"}
+else {print "not ok 5\n"}
+
+eval{c2xs('Math::Geometry::Planar::GPC::Polygon', 'Math::Geometry::Planar::GPC::Polygon', '/foo/non/existent/typemap.txt');};
+
+if($@ =~ /\/foo\/non\/existent\/typemap\.txt is not a valid directory/) {print "ok 6\n"}
+else {print "not ok 6\n"}
+
+eval{c2xs('Math::Geometry::Planar::GPC::Polygon', 'Math::Geometry::Planar::GPC::Polygon', {'typemaps' => ['/foo/non/existent/typemap.txt']});};
+
+if($@ =~ /is an invalid config option/) {print "ok 7\n"}
+else {print "not ok 7\n"}

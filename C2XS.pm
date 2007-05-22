@@ -9,15 +9,18 @@ our @ISA = qw(Exporter);
 
 our @EXPORT_OK = qw(c2xs);
 
-our $VERSION = 0.10;
+our $VERSION = 0.11;
 
 sub c2xs {
     eval {require "Inline/C.pm"};
     if($@ || $Inline::C::VERSION < 0.44) {die "Need a functioning Inline::C (version 0.44 or later). $@"}
     my $module = shift;
     my $pkg = shift;
-    my $build_dir = shift || '.';
-    my $config_options = shift ||
+
+    # Set the defaults for $build_dir and $config_options.
+    # (These will be overwritten by any supplied arguments.)
+    my ($build_dir, $config_options) = (
+       '.', 
        {
        'AUTOWRAP' => 0,
        'AUTO_INCLUDE' => '',
@@ -26,10 +29,23 @@ sub c2xs {
        'INC' => '',
        'VERSION' => 0,
        'WRITE_MAKEFILE_PL' => 0,
-       };
+       }
+                                        );
+    
+    if(@_) {
+      if(ref($_[0]) eq "HASH") {
+        $config_options = shift; 
+      }
+      else {$build_dir = shift}
+    }
+
+    if(@_) {
+      if(ref($_[0]) ne "HASH") {die "Fourth arg to c2xs() needs to be a hash containing config options ... but it's not !!\n"}  
+      $config_options = shift;
+    }
+
     unless(-d $build_dir) {
-       warn "$build_dir is not a valid directory ... file(s) will be written to the cwd instead\n";
-       $build_dir = '.';
+       die "$build_dir is not a valid directory";
     }
     my $modfname = (split /::/, $module)[-1];
     my $need_inline_h = $config_options->{AUTOWRAP} ? 1 : 0;
@@ -88,6 +104,9 @@ sub c2xs {
     $o->{API}{module} = $module;
     $o->{API}{code} = $code;
 
+    # Check for invalid config options - and die if one is found
+    for(keys(%$config_options)) { die "$_ is an invalid config option" if !check_config_keys($_)}
+
     if(exists($config_options->{BUILD_NOISY})) {$o->{CONFIG}{BUILD_NOISY} = $config_options->{BUILD_NOISY}}
 
     if($config_options->{AUTOWRAP}) {$o->{ILSM}{AUTOWRAP} = 1}
@@ -100,6 +119,9 @@ sub c2xs {
 
     if($config_options->{TYPEMAPS}) {
       unless(ref($config_options->{TYPEMAPS}) eq 'ARRAY') {die "TYPEMAPS must be passed as an array reference"}
+      for(@{$config_options->{TYPEMAPS}}) {
+         die "Couldn't locate the typemap $_" unless -e $_;
+      }
       $o->{ILSM}{MAKEFILE}{TYPEMAPS} = $config_options->{TYPEMAPS}; 
     }
 
@@ -161,6 +183,15 @@ sub _build {
       $o->call('write_Inline_headers', 'Build Glue 2');
     }
 }
+
+sub check_config_keys {
+    for('AUTOWRAP', 'AUTO_INCLUDE', 'TYPEMAPS', 'LIBS', 'INC', 'VERSION', 'WRITE_MAKEFILE_PL',
+        'BUILD_NOISY', 'BOOT', 'MAKE', 'PREFIX', 'CCFLAGS', 'LD', 'LDDLFLAGS', 'MYEXTLIB', 
+        'OPTIMIZE', 'CC')
+       {return 1 if $_ eq $_[0]} # it's a valid config option
+    return 0;                    # it's an invalid config option
+}
+
 1;
 
 __END__
@@ -176,7 +207,8 @@ InlineX::C2XS - Convert from Inline C code to XS.
   my $module_name = 'MY::XS_MOD';
   my $package_name = 'MY::XS_MOD';
 
-  # $build_dir is an optional third arg
+  # $build_dir is an optional third arg.
+  # If omitted it defaults to '.' (the cwd).
   my $build_dir = '/some/where/else';
 
   # $config_opts is an optional fourth arg (hash reference)
@@ -184,7 +216,7 @@ InlineX::C2XS - Convert from Inline C code to XS.
   my $config_opts = {'AUTOWRAP' => 1,
                      'AUTO_INCLUDE' => 'my_header.h',
                      'TYPEMAPS' => ['my_typemap'],
-                     'INC' => '-Imy/includes/dir',
+                     'INC' => '-I/my/includes/dir',
                      'WRITE_MAKEFILE_PL' => 1,
                      'VERSION' => 0.42,
                      'LIBS' => ['-L/somewhere -lmylib'],

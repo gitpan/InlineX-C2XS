@@ -1,3 +1,17 @@
+- 0.11 ... Can now provide the optional "4th" (config options) argument
+           without *also* having to provide a "3rd" (build directory) argument.
+           ie If the third argument is a hash reference, it's assumed to contain
+           config options - otherwise it sets the build directory.
+
+           Check that only valid config options have been passed via the "config
+           options" argument.
+       
+           Catch the error (and die) if a non-existent typemap is specified
+           in the TYPEMAPS config option.
+
+           If the specified build_dir does not exist, die(). Previously, a warning
+           was issued and the files written to the current working directory.
+
 - 0.10 ... Add coverage for the PREFIX and BOOT options.
            Add coverage for CCFLAGS, LDDLFLAGS, MYEXTLIB and OPTIMIZE (and 
            test that they get passed to the generated Makefile.PL) Also check
