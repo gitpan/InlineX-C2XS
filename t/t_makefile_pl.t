@@ -13,7 +13,7 @@ my $build_dir = "${cwd}/src";
 die "Can't run the t_makefile_pl.t test script" unless -d $build_dir;
 
 
-print "1..3\n";
+print "1..4\n";
 
 my %config_opts = (
                   'AUTOWRAP' => 1,
@@ -21,6 +21,7 @@ my %config_opts = (
                   'TYPEMAPS' => ['src/simple_typemap.txt'],
                   'INC' => '-Isrc',
                   'WRITE_MAKEFILE_PL' => 1,
+                  'WRITE_PM' => 1,
                   'LIBS' => ['-L/anywhere -lbogus'],
                   'VERSION' => 0.42,
                   'BUILD_NOISY' => 0,
@@ -194,3 +195,39 @@ close(RD1) or print "Unable to close src/Makefile.PL after reading: $!\n";
 if(!unlink('src/Makefile.PL')) { print "Couldn't unlink src/Makefile.PL\n"}
 
 print "ok 3\n";
+
+$ok = '';
+
+eval{open(RD, '<', 'src/test.pm') or die $!;};
+
+if($@) {print $@, "\n"}
+else {$ok .= 'a'}
+
+if($ok eq 'a') {
+  my @pm = <RD>;
+  $ok .= 'b' if $pm[0] eq "package test;\n";
+  $ok .= 'c' if $pm[1] eq "use strict;\n";
+  $ok .= 'C' if $pm[2] eq "\n";
+  $ok .= 'd' if $pm[3] eq "require Exporter;\n";
+  $ok .= 'e' if $pm[4] eq "*import = \\&Exporter::import;\n";
+  $ok .= 'f' if $pm[5] eq "require DynaLoader;\n";
+  $ok .= 'g' if $pm[6] eq "\n";
+  $ok .= 'h' if $pm[7] eq "\$test::VERSION = '0.42';\n";
+  $ok .= 'i' if $pm[8] eq "\n";
+  $ok .= 'j' if $pm[9] eq "DynaLoader::bootstrap test \$test::VERSION;\n";
+  $ok .= 'J' if $pm[10] eq "\n";
+  $ok .= 'k' if $pm[11] eq "\@test::EXPORT = ();\n";
+  $ok .= 'l' if $pm[12] eq "\@test::EXPORT_OK = ();\n";
+  $ok .= 'L' if $pm[13] eq "\n";
+  $ok .= 'm' if $pm[14] eq "sub dl_load_flags {0} # Prevent DynaLoader from complaining and croaking\n";
+  $ok .= 'n' if $pm[15] eq "\n";
+  $ok .= 'o' if $pm[16] eq "1;\n";
+  eval{close(RD);};
+  if(!$@) {$ok .= 'p'}
+  else {print $@, "\n"}
+}
+
+if(!unlink('src/test.pm')) { print "Couldn't unlink src/test.pm\n"}
+
+if($ok eq 'abcCdefghijJklLmnop') {print "ok 4\n"}
+else {print "not ok 4 $ok\n"}

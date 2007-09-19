@@ -2,7 +2,7 @@ use warnings;
 use strict;
 use InlineX::C2XS qw(c2xs);
 
-print "1..7\n";
+print "1..8\n";
 
 c2xs('Math::Geometry::Planar::GPC::Polygon', 'Math::Geometry::Planar::GPC::Polygon',
     {PREFIX => 'remove_', BOOT => 'printf("Hi from bootstrap\n");'});
@@ -135,3 +135,8 @@ eval{c2xs('Math::Geometry::Planar::GPC::Polygon', 'Math::Geometry::Planar::GPC::
 
 if($@ =~ /is an invalid config option/) {print "ok 7\n"}
 else {print "not ok 7\n"}
+
+eval{c2xs('Math::Geometry::Planar::GPC::Polygon', 'main', {'TYPEMAPS' => ['foo']}, {'TYPEMAPS' => ['foo']});};
+
+if($@ =~ /Incorrect usage \- there should be no arguments/) {print "ok 8\n"}
+else {print "not ok 8\n"}

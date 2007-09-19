@@ -1,3 +1,9 @@
+- 0.12 ... Provide access to ParseRegExp.pm. (Untested, because ParseRegExp.pm
+           is broken - see http://rt.cpan.org/Ticket/Display.html?id=6327 for
+           patches to ParseRegExp.pm)
+
+           Can now write a .pm file for you as well
+
 - 0.11 ... Can now provide the optional "4th" (config options) argument
            without *also* having to provide a "3rd" (build directory) argument.
            ie If the third argument is a hash reference, it's assumed to contain

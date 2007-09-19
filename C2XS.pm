@@ -9,7 +9,7 @@ our @ISA = qw(Exporter);
 
 our @EXPORT_OK = qw(c2xs);
 
-our $VERSION = 0.11;
+our $VERSION = 0.12;
 
 sub c2xs {
     eval {require "Inline/C.pm"};
@@ -29,12 +29,14 @@ sub c2xs {
        'INC' => '',
        'VERSION' => 0,
        'WRITE_MAKEFILE_PL' => 0,
+       'WRITE_PM' => 0,
        }
                                         );
     
     if(@_) {
       if(ref($_[0]) eq "HASH") {
         $config_options = shift; 
+        if(@_) {die "Incorrect usage - there should be no arguments to c2xs() after the hash reference"}
       }
       else {$build_dir = shift}
     }
@@ -105,7 +107,7 @@ sub c2xs {
     $o->{API}{code} = $code;
 
     # Check for invalid config options - and die if one is found
-    for(keys(%$config_options)) { die "$_ is an invalid config option" if !check_config_keys($_)}
+    for(keys(%$config_options)) { die "$_ is an invalid config option" if !_check_config_keys($_)}
 
     if(exists($config_options->{BUILD_NOISY})) {$o->{CONFIG}{BUILD_NOISY} = $config_options->{BUILD_NOISY}}
 
@@ -156,7 +158,13 @@ sub c2xs {
 
     if($config_options->{OPTIMIZE}) {$o->{ILSM}{MAKEFILE}{OPTIMIZE} = " " . $config_options->{OPTIMIZE}}
 
-    if(!$need_inline_h) {$o->{ILSM}{AUTO_INCLUDE} =~ s/#include "INLINE.h"//i}
+    if($config_options->{USING}) {
+      unless(ref($config_options->{USING}) eq 'ARRAY') {die "USING must be passed as an array reference"}
+      $o->{CONFIG}{USING} = $config_options->{USING};
+      Inline::push_overrides($o);
+    }
+
+    if(!$need_inline_h) {$o->{ILSM}{AUTO_INCLUDE} =~ s/#include "INLINE\.h"//i}
 
     _build($o, $need_inline_h);
 
@@ -166,6 +174,15 @@ sub c2xs {
       print "Writing Makefile.PL in the ", $o->{API}{build_dir}, " directory\n";
       $o->call('write_Makefile_PL', 'Build Glue 3');
     }
+
+    if($config_options->{WRITE_PM}) {
+      if($config_options->{VERSION}) {$o->{API}{version} = $config_options->{VERSION}}
+      else {
+        warn "'\$VERSION' being set to '0.00' in ", $o->{API}{modfname}, ".pm. Did you supply a correct version number to c2xs() ?";
+        $o->{API}{version} = '0.00';
+      }
+    _write_pm($o);
+    }    
 }
 
 sub _build {
@@ -184,12 +201,28 @@ sub _build {
     }
 }
 
-sub check_config_keys {
+sub _check_config_keys {
     for('AUTOWRAP', 'AUTO_INCLUDE', 'TYPEMAPS', 'LIBS', 'INC', 'VERSION', 'WRITE_MAKEFILE_PL',
         'BUILD_NOISY', 'BOOT', 'MAKE', 'PREFIX', 'CCFLAGS', 'LD', 'LDDLFLAGS', 'MYEXTLIB', 
-        'OPTIMIZE', 'CC')
+        'OPTIMIZE', 'CC', 'USING', 'WRITE_PM')
        {return 1 if $_ eq $_[0]} # it's a valid config option
     return 0;                    # it's an invalid config option
+}
+
+sub _write_pm {
+    my $o = shift;
+    open(WR, '>', $o->{API}{build_dir} . '/' . $o->{API}{modfname} . ".pm")
+        or die "Couldn't create the .pm file: $!";
+    print "Writing ", $o->{API}{modfname}, ".pm in the ", $o->{API}{build_dir}, " directory\n";
+    print WR "package ", $o->{API}{pkg}, ";\nuse strict;\n\n";
+    print WR "require Exporter;\n*import = \\&Exporter::import;\nrequire DynaLoader;\n\n";
+    print WR "\$", $o->{API}{pkg}, "::VERSION = '", $o->{API}{version}, "';\n\n"; 
+    print WR "DynaLoader::bootstrap ", $o->{API}{pkg}, " \$", $o->{API}{pkg}, "::VERSION;\n\n";
+    print WR "\@", $o->{API}{pkg}, "::EXPORT = ();\n";
+    print WR "\@", $o->{API}{pkg}, "::EXPORT_OK = ();\n\n";
+    print WR "sub dl_load_flags {0} # Prevent DynaLoader from complaining and croaking\n\n";
+    print WR "1;\n";
+    close(WR) or die "Couldn't close the .pm file after writing to it: $!";
 }
 
 1;
@@ -202,6 +235,9 @@ InlineX::C2XS - Convert from Inline C code to XS.
 
 =head1 SYNOPSIS
 
+ #USAGE:
+ #c2xs($module_name, $package_name [, $build_dir] [, $config_opts])
+
   use InlineX::C2XS qw(c2xs);
 
   my $module_name = 'MY::XS_MOD';
@@ -213,14 +249,9 @@ InlineX::C2XS - Convert from Inline C code to XS.
 
   # $config_opts is an optional fourth arg (hash reference)
   # See the "Recognised Hash Keys" section below.
-  my $config_opts = {'AUTOWRAP' => 1,
-                     'AUTO_INCLUDE' => 'my_header.h',
-                     'TYPEMAPS' => ['my_typemap'],
-                     'INC' => '-I/my/includes/dir',
+  my $config_opts = {'WRITE_PM' => 1,
                      'WRITE_MAKEFILE_PL' => 1,
                      'VERSION' => 0.42,
-                     'LIBS' => ['-L/somewhere -lmylib'],
-                     'BUILD_NOISY' => 0, # No Inline::C progress messages
                     };
 
   # Create /some/where/else/XS_MOD.xs from ./src/XS_MOD.c
@@ -230,12 +261,23 @@ InlineX::C2XS - Convert from Inline C code to XS.
   c2xs($module_name, $package_name);
 
   The optional fourth arg (a reference to a hash) is to enable the
-  writing of XS files using Inline::C's autowrap capability - and
-  also to enable the creation of the Makefile.PL (if desired).
+  passing of additional information and configuration options that
+  Inline may need - and also to enable the creation of the
+  Makefile.PL and .pm file (if desired).
   See the "Recognised Hash Keys" section below.
 
-  # Create XS_MOD.xs in the cwd, using the AUTOWRAP feature:
-  c2xs($module_name, $package_name, '.', $config_opts);
+  # Create XS_MOD.xs in the cwd, and also generate the Makefile.PL
+  # and XS_MOD.pm:
+  c2xs($module_name, $package_name, $config_opts);
+
+  NOTE: If you wish to supply the $config_opts argument, but not the
+  $build_dir argument then you simply omit the $build_dir argument.
+  That is, the following are equivalent:
+   c2xs($module_name, $package_name, '.', $config_opts);
+   c2xs($module_name, $package_name, $config_opts);
+  If a third argument is given, it's deemed to be the build directory
+  unless it's a hash reference (in which case it's deemed to be the
+  hash reference containing the additional config options).
 
 =head1 DESCRIPTION
  
@@ -270,7 +312,7 @@ InlineX::C2XS - Convert from Inline C code to XS.
       printf("Hello world\n");
   }
 
- InlineX::C2XS looks for the source file in ./src directory - expecting
+ InlineX::C2XS looks for the C source file in ./src directory - expecting
  that the filename will be the same as what appears after the final '::'
  in the module name (with a '.c' extension). ie if your module is
  called My::Next::Mod the c2xs() function looks for a file ./src/Mod.c, 
@@ -278,9 +320,10 @@ InlineX::C2XS - Convert from Inline C code to XS.
  the file 'INLINE.h' - but only if that file is needed. The generated 
  xs file (and INLINE.h) will be written to the cwd unless a third 
  argument (specifying a valid directory) is provided to the c2xs
- function
+ function.
 
- The created XS file, when packaged with the '.pm' file, an
+ The created XS file, when packaged with the '.pm' file (which can be 
+ auto-generated by setting the WRITE_PM configuration key), an
  appropriate 'Makefile.PL' (which can also be auto-generated by setting
  the WRITE_MAKEFILE_PL hash key), and 'INLINE.h' (if it's needed), can be 
  used to build the module in the usual way - without any dependence
@@ -293,8 +336,8 @@ InlineX::C2XS - Convert from Inline C code to XS.
 
   AUTO_INCLUDE
    The value specified is automatically inserted into the generated XS
-   file. (Also, the specified include will be parsed iff AUTOWRAP
-   is set to a true value.) eg:
+   file. (Also, the specified include will be parsed and used iff 
+   AUTOWRAP is set to a true value.) eg:
 
     AUTO_INCLUDE => '#include <my_header.h>',
   ----
@@ -397,16 +440,23 @@ InlineX::C2XS - Convert from Inline C code to XS.
   ----
 
   TYPEMAPS
-   The value(s) specified are added to the list of typemaps. It makes
-   sense to assign this key only when AUTOWRAP and/or WRITE_MAKEFILE_PL
-   are set to a true value. (Must be an array reference.) eg:
+   The value(s) specified are added to the list of typemaps.
+  (Must be an array reference.) eg:
 
     TYPEMAPS =>['my_typemap', 'my_other_typemap'],
   ----
 
+  USING
+   If you want Inline to use ParseRegExp.pm instead of RecDescent.pm for 
+   the parsing, then specify:
+
+    USING => ['ParseRegExp'],
+  ----
+
   VERSION
    Set this to the version number of the module. It makes sense to assign
-   this key only if WRITE_MAKEFILE_PL is set to a true value. eg:
+   this key only if WRITE_MAKEFILE_PL and/or WRITE_PM is set to a true
+   value. eg:
 
     VERSION => 0.42,
   ----
@@ -418,6 +468,14 @@ InlineX::C2XS - Convert from Inline C code to XS.
    the correct value when WRITE_MAKEFILE_PL is set.) eg:
     
     WRITE_MAKEFILE_PL => 1,
+  ----
+
+  WRITE_PM
+   Set this to a true value if you want a .pm file to be generated.
+   You'll also need to assign the 'VERSION' key appropriately. 
+   Note that it's a fairly simplistic .pm file - no POD, no perl 
+   subroutines, no Exporter, no warnings - but it will allow the 
+   utilisation of all of the XSubs in the XS file.
   ----
 
 =head1 TODO
