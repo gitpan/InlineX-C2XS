@@ -9,7 +9,7 @@ our @ISA = qw(Exporter);
 
 our @EXPORT_OK = qw(c2xs);
 
-our $VERSION = 0.12;
+our $VERSION = 0.13;
 
 sub c2xs {
     eval {require "Inline/C.pm"};
@@ -54,12 +54,30 @@ sub c2xs {
     my $code = '';
     my $o;
 
-    open(RD, "<", "src/$modfname.c") or die "Can't open src/${modfname}.c for reading: $!";
-    while(<RD>) { 
-         $code .= $_;
-         if($_ =~ /inline_stack_vars/i) {$need_inline_h = 1}
+    if(exists($config_options->{CODE}) && exists($config_options->{SRC_LOCATION})) {
+      die "You can provide either CODE *or* SRC_LOCATION arguments ... but not *both*";
     }
-    close(RD) or die "Can't close src/$modfname.c after reading: $!";
+
+    if(exists($config_options->{CODE})) {
+      $code = $config_options->{CODE};
+      if($code =~ /inline_stack_vars/i) {$need_inline_h = 1 }
+    }
+    elsif(exists($config_options->{SRC_LOCATION})) {
+      open(RD, "<", $config_options->{SRC_LOCATION}) or die "Can't open ", $config_options->{SRC_LOCATION}, " for reading: $!";
+      while(<RD>) { 
+           $code .= $_;
+           if($_ =~ /inline_stack_vars/i) {$need_inline_h = 1}
+      }
+      close(RD) or die "Can't close ", $config_options->{SRC_LOCATION}, " after reading: $!";
+    }
+    else {
+      open(RD, "<", "src/$modfname.c") or die "Can't open src/${modfname}.c for reading: $!";
+      while(<RD>) { 
+           $code .= $_;
+           if($_ =~ /inline_stack_vars/i) {$need_inline_h = 1}
+      }
+      close(RD) or die "Can't close src/$modfname.c after reading: $!";
+    }
 
     ## Initialise $o.
     ## Many of these keys may not be needed for the purpose of this
@@ -122,7 +140,7 @@ sub c2xs {
     if($config_options->{TYPEMAPS}) {
       unless(ref($config_options->{TYPEMAPS}) eq 'ARRAY') {die "TYPEMAPS must be passed as an array reference"}
       for(@{$config_options->{TYPEMAPS}}) {
-         die "Couldn't locate the typemap $_" unless -e $_;
+         die "Couldn't locate the typemap $_" unless -f $_;
       }
       $o->{ILSM}{MAKEFILE}{TYPEMAPS} = $config_options->{TYPEMAPS}; 
     }
@@ -204,7 +222,7 @@ sub _build {
 sub _check_config_keys {
     for('AUTOWRAP', 'AUTO_INCLUDE', 'TYPEMAPS', 'LIBS', 'INC', 'VERSION', 'WRITE_MAKEFILE_PL',
         'BUILD_NOISY', 'BOOT', 'MAKE', 'PREFIX', 'CCFLAGS', 'LD', 'LDDLFLAGS', 'MYEXTLIB', 
-        'OPTIMIZE', 'CC', 'USING', 'WRITE_PM')
+        'OPTIMIZE', 'CC', 'USING', 'WRITE_PM', 'CODE', 'SRC_LOCATION')
        {return 1 if $_ eq $_[0]} # it's a valid config option
     return 0;                    # it's an invalid config option
 }
@@ -214,12 +232,12 @@ sub _write_pm {
     open(WR, '>', $o->{API}{build_dir} . '/' . $o->{API}{modfname} . ".pm")
         or die "Couldn't create the .pm file: $!";
     print "Writing ", $o->{API}{modfname}, ".pm in the ", $o->{API}{build_dir}, " directory\n";
-    print WR "package ", $o->{API}{pkg}, ";\nuse strict;\n\n";
+    print WR "package ", $o->{API}{module}, ";\nuse strict;\n\n";
     print WR "require Exporter;\n*import = \\&Exporter::import;\nrequire DynaLoader;\n\n";
-    print WR "\$", $o->{API}{pkg}, "::VERSION = '", $o->{API}{version}, "';\n\n"; 
-    print WR "DynaLoader::bootstrap ", $o->{API}{pkg}, " \$", $o->{API}{pkg}, "::VERSION;\n\n";
-    print WR "\@", $o->{API}{pkg}, "::EXPORT = ();\n";
-    print WR "\@", $o->{API}{pkg}, "::EXPORT_OK = ();\n\n";
+    print WR "\$", $o->{API}{module}, "::VERSION = '", $o->{API}{version}, "';\n\n"; 
+    print WR "DynaLoader::bootstrap ", $o->{API}{module}, " \$", $o->{API}{module}, "::VERSION;\n\n";
+    print WR "\@", $o->{API}{module}, "::EXPORT = ();\n";
+    print WR "\@", $o->{API}{module}, "::EXPORT_OK = ();\n\n";
     print WR "sub dl_load_flags {0} # Prevent DynaLoader from complaining and croaking\n\n";
     print WR "1;\n";
     close(WR) or die "Couldn't close the .pm file after writing to it: $!";
@@ -257,14 +275,24 @@ InlineX::C2XS - Convert from Inline C code to XS.
   # Create /some/where/else/XS_MOD.xs from ./src/XS_MOD.c
   c2xs($module_name, $package_name, $build_dir);
 
-  # Or create XS_MOD.xs in the cwd:
+  # Alternatively create XS_MOD.xs in the cwd:
   c2xs($module_name, $package_name);
 
-  The optional fourth arg (a reference to a hash) is to enable the
+  # Or Create /some/where/else/XS_MOD.xs from $code
+  $code = 'void foo() {printf("Hello World\n");}';
+  c2xs($module_name, $package_name, $build_dir, {CODE => $code});
+
+  # Or Create /some/where/else/XS_MOD.xs from the C code that's in
+  # ./otherplace/otherfile.ext
+  $loc = './otherplace/otherfile.ext';
+  c2xs($module_name, $package_name, $build_dir, {SRC_LOCATION => $loc});
+
+  The optional final arg (a reference to a hash) is to enable the
   passing of additional information and configuration options that
   Inline may need - and also to enable the creation of the
   Makefile.PL and .pm file (if desired).
-  See the "Recognised Hash Keys" section below.
+  See the "Recognised Hash Keys" section below for a list of the
+  accepted keys (and explanation of their usage).
 
   # Create XS_MOD.xs in the cwd, and also generate the Makefile.PL
   # and XS_MOD.pm:
@@ -280,7 +308,7 @@ InlineX::C2XS - Convert from Inline C code to XS.
   hash reference containing the additional config options).
 
 =head1 DESCRIPTION
- 
+
  Don't feed an actual Inline::C script to this module - it won't
  be able to parse it. It is capable of parsing correctly only
  that C code that is suitable for inclusion in an Inline::C
@@ -303,7 +331,7 @@ InlineX::C2XS - Convert from Inline C code to XS.
   greet();
   __END__
 
- The C file that InlineX::C2XS needs to find would contain only that code
+ The C code that InlineX::C2XS needs to find would contain only that code
  that's between the opening 'EOC' and the closing 'EOC' - namely:
 
   #include <stdio.h>
@@ -312,15 +340,17 @@ InlineX::C2XS - Convert from Inline C code to XS.
       printf("Hello world\n");
   }
 
+ If the C code is not provided by either the CODE or SRC_LOCATION keys,
  InlineX::C2XS looks for the C source file in ./src directory - expecting
  that the filename will be the same as what appears after the final '::'
  in the module name (with a '.c' extension). ie if your module is
  called My::Next::Mod the c2xs() function looks for a file ./src/Mod.c, 
  and creates a file named Mod.xs. Also created by the c2xs function, is
  the file 'INLINE.h' - but only if that file is needed. The generated 
- xs file (and INLINE.h) will be written to the cwd unless a third 
- argument (specifying a valid directory) is provided to the c2xs
- function.
+ xs file (and any other generated files will be written to the cwd unless
+ the third argument supplied to c2xs() is a string specifying a valid 
+ directory - in which case the generated files(s) will be written to that
+ directory.
 
  The created XS file, when packaged with the '.pm' file (which can be 
  auto-generated by setting the WRITE_PM configuration key), an
@@ -379,6 +409,12 @@ InlineX::C2XS - Convert from Inline C code to XS.
     CCFLAGS => '-DMY_DEFINE ' . $Config{ccflags},
   ----
 
+  CODE
+   A string containing the C code. eg:
+
+    CODE => 'void foo() {printf("Hello World\n";}',
+  ----
+
   INC
    The value specified is added to the includes search path. It makes
    sense to assign this key only when AUTOWRAP and/or WRITE_MAKEFILE_PL
@@ -406,7 +442,7 @@ InlineX::C2XS - Convert from Inline C code to XS.
    The value(s) specified become the LIBS search path. It makes sense
    to assign this key only if WRITE_MAKEFILE_PL is set to a true value.
    (Must be an array reference.) eg
-   
+
     LIBS => ['-L/somewhere -lsomelib', '-L/elsewhere -lotherlib'],
   ----
 
@@ -439,6 +475,12 @@ InlineX::C2XS - Convert from Inline C code to XS.
     PREFIX => 'FOO_',
   ----
 
+  SRC_LOCATION
+   Specifies a C file that contains the C source code. eg:
+
+    SRC_LOCATION => '/home/me/source.ext',
+  ----
+
   TYPEMAPS
    The value(s) specified are added to the list of typemaps.
   (Must be an array reference.) eg:
@@ -466,7 +508,7 @@ InlineX::C2XS - Convert from Inline C code to XS.
    generated. (There's no point in specifying a false value, as "false"
    is the default anyway. You should also assign the 'VERSION' key to 
    the correct value when WRITE_MAKEFILE_PL is set.) eg:
-    
+
     WRITE_MAKEFILE_PL => 1,
   ----
 
@@ -489,10 +531,14 @@ InlineX::C2XS - Convert from Inline C code to XS.
   None known - patches/rewrites/enhancements welcome.
   Send to sisyphus at cpan dot org
 
-=head1 COPYRIGHT
+=head1 LICENSE
 
-  Copyright Sisyphus. You can do whatever you want with this code.
-  It comes without any guarantee or warranty.
+    This perl code is free software; you may redistribute it
+    and/or modify it under the same terms as Perl itself.
+
+=head1 AUTHOR
+
+    Sisyphus <sisyphus at(@) cpan dot (.) org>
 
 =cut
 

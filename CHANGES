@@ -1,3 +1,13 @@
+- 0.13 ... Change the test for the locatability of a specified typemap from a
+           '-e' test to a '-f' test.
+
+           Add C2XS-Cookbook.pod
+
+           Minor correction to WRITE_PM
+
+           The C source code can now be alternatively provided by either a 
+           'CODE' or 'SRC_LOCATION' key. 
+
 - 0.12 ... Provide access to ParseRegExp.pm. (Untested, because ParseRegExp.pm
            is broken - see http://rt.cpan.org/Ticket/Display.html?id=6327 for
            patches to ParseRegExp.pm)

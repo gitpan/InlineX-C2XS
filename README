@@ -1,4 +1,5 @@
 Convert Inline::C code to XS. See the InlineX::C2XS documentation for details.
+See also 'perldoc InlineX::Cookbook' and the demos folder.
 
 If you want to convert Inline::CPP code to XS, use InlineX::CPP2XS. 
 

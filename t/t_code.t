@@ -4,35 +4,38 @@ use InlineX::C2XS qw(c2xs);
 
 print "1..2\n";
 
+my $code = "simple_double  simple(simple_double);\nextra_simple_double x_simple(extra_simple_double);";
+
 my %config_opts = (
                   'AUTOWRAP' => 1,
                   'AUTO_INCLUDE' => '#include <simple.h>' . "\n" .'#include "src/extra_simple.h"',
                   'TYPEMAPS' => ['src/simple_typemap.txt'],
                   'INC' => '-Isrc',
+                  'CODE' => $code,
                   );
 
-c2xs('test', 'test', '.', \%config_opts);
+c2xs('testc', 'testc', '.', \%config_opts);
 
 my ($ok, $ok2) = (1, 1);
 my @rd1;
 my @rd2;
 
-if(!rename('test.xs', 'test.txt')) {
-  warn "couldn't rename test.xs\n";
+if(!rename('testc.xs', 'testc.txt')) {
+  warn "couldn't rename testc.xs\n";
   print "not ok 1\n";
   $ok = 0;
 }
 
 if($ok) {
-  if(!open(RD1, "test.txt")) {
-    warn "unable to open test.txt for reading: $!\n";
+  if(!open(RD1, "testc.txt")) {
+    warn "unable to open testc.txt for reading: $!\n";
     print "not ok 1\n";
     $ok = 0;
   }
 }
 
 if($ok) {
-  if(!open(RD2, "expected_autowrap.txt")) {
+  if(!open(RD2, "expected_autowrap_c.txt")) {
     warn "unable to open expected_autowrap.txt for reading: $!\n";
     print "not ok 1\n";
     $ok = 0;
@@ -46,7 +49,7 @@ if($ok) {
 
 if($ok) {
   if(scalar(@rd1) != scalar(@rd2)) {
-    warn "test.txt does not have the expected number of lines\n";
+    warn "testc.txt does not have the expected number of lines\n";
     print "not ok 1\n";
     $ok = 0;
   }
@@ -70,15 +73,15 @@ if($ok) {
 }
 
 if(!$ok2) {
-  warn "test.txt does not match expected_autowrap.txt\n";
+  warn "testc.txt does not match expected_autowrap.txt\n";
   print "not ok 1\n";
 }
 
 elsif($ok) {print "ok 1\n"}
 
-close(RD1) or warn "Unable to close test.txt after reading: $!\n";
+close(RD1) or warn "Unable to close testc.txt after reading: $!\n";
 close(RD2) or warn "Unable to close expected_autowrap.txt after reading: $!\n";
-if(!unlink('test.txt')) { warn "Couldn't unlink test.txt\n"}
+if(!unlink('testc.txt')) { warn "Couldn't unlink testc.txt\n"}
 
 ($ok, $ok2) = (1, 1);
 

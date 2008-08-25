@@ -1,16 +1,17 @@
 package MyMod;
-use warnings;
 use strict;
 
 require Exporter;
+*import = \&Exporter::import;
 require DynaLoader;
 
-our $VERSION = 0.01;
+$MyMod::VERSION = '0.01';
 
-our @ISA = qw(Exporter DynaLoader);
+DynaLoader::bootstrap MyMod $MyMod::VERSION;
 
-our @EXPORT_OK = qw(erf);
+@MyMod::EXPORT = ();
+@MyMod::EXPORT_OK = ();
 
-bootstrap MyMod $VERSION;
+sub dl_load_flags {0} # Prevent DynaLoader from complaining and croaking
 
 1;
