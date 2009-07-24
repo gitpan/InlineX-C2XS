@@ -1,11 +1,9 @@
 use ExtUtils::MakeMaker;
 my %options = %{       
 {
-  'TYPEMAPS' => [
-    'C:\\perl58_M\\lib\\ExtUtils\\typemap'
-  ],
+  'TYPEMAPS' => [],
   'NAME' => 'MyMod',
-  'INC' => '-IC:/_32/working/inlinex-c2xs/InlineX-C2XS-0.13/demos/autowrap',
+  'INC' => '',
   'VERSION' => '0.01'
 }
 };

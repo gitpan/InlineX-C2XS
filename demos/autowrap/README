@@ -8,11 +8,6 @@ INLINE.h and Makefile.PL from this directory, cd to this directory and run the s
 liner. (You'll need to interchange the double-quotes and single-quotes if you're running
 a nix type shell.)
 
-(The careful observer will note that the INC entry in the generated Makefile.PL specifies
-the cwd - which is irrelevant for the purposes of this exercise as there are no
-additional includes to be found. For this demo, it doesn't matter whether 'INC' specifies
-an existent directory, a non-existent directory, or nothing at all.)
-
 'README' (this file) and 't/test.t' were hand written - just to make the demo complete.
 To build MyMod just run:
 

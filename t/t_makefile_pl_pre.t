@@ -1,3 +1,4 @@
+# Same as t_makefile_pl.t, but using ParseRegExp.pm
 use warnings;
 use strict;
 use Cwd;
@@ -20,13 +21,14 @@ my @rd1;
 my @rd2;
 
 my %config_opts = (
+                  'USING' => ['ParseRegExp'],
                   'AUTOWRAP' => 1,
                   'AUTO_INCLUDE' => '#include <simple.h>' . "\n" .'#include "src/extra_simple.h"',
                   'TYPEMAPS' => ['src/simple_typemap.txt'],
                   'INC' => '-Isrc',
                   'WRITE_MAKEFILE_PL' => 1,
                   'WRITE_PM' => 1,
-                  'LIBS' => '-L/anywhere -lbogus',
+                  'LIBS' => ['-L/anywhere -lbogus'],
                   'VERSION' => 0.42,
                   'BUILD_NOISY' => 0,
                   'CC' => $Config{cc},

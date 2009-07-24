@@ -9,6 +9,11 @@ t/t_autowrap.t
 t/t_code.t
 t/t_src_location.t
 t/t_makefile_pl.t
+t/t_c_pre.t
+t/t_autowrap_pre.t
+t/t_code_pre.t
+t/t_src_location_pre.t
+t/t_makefile_pl_pre.t
 t/pod.t
 
 expected.h

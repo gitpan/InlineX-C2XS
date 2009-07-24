@@ -1,3 +1,19 @@
+- 0.14 ... Requires Inline-0.45 or later. 
+
+           Add tests for the use of ParseRegExp.pm.
+
+           'USING' now takes either a string or array reference as its value (as
+           does the Inline::C equivalent).
+
+           'LIBS' and 'TYPEMAPS' can now optionally be assigned as a (space
+           delimited) string or an array reference (same as 'INC'). Previously
+           'LIBS' and 'TYPEMAPS' had to be assigned as an array reference.
+
+           'INC' no longer automatically includes the cwd.
+
+           'TYPEMAPS' no longer automatically specifies the standard perl
+           typemap. (Doing so was annoying and unnecessary.)
+
 - 0.13 ... Change the test for the locatability of a specified typemap from a
            '-e' test to a '-f' test.
 

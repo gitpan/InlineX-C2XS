@@ -4,7 +4,7 @@ my %options =
   (
   NAME     => 'InlineX::C2XS',
   PREREQ_PM => {
-                'Inline::C'  => 0.44,
+                'Inline::C'  => 0.45,
                },
   VERSION_FROM => 'C2XS.pm',
   );

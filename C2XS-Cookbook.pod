@@ -176,13 +176,7 @@ $hashfef:
 
 By default Parse::RecDescent is used to parse the C code. Inline comes
 with another C parser called 'ParseRegExp'. It's much faster than 
-Parse::RecDescent (which is a consideration for large C files), but 
-it's unfortunately broken. It's also easy to fix - see:
-
-   http://rt.cpan.org/Public/Bug/Display.html?id=6327
-
-Once ParseRegExp.pm has been fixed, using it is just a matter of 
-inserting the following key/value assignment into create.pl's $hashref:
+Parse::RecDescent. To use Parse::RegExp:
 
    USING => ['ParseRegExp'],
 
@@ -252,10 +246,9 @@ what to do. Here's one such typemap that satisfies both requirements:
  OUTPUT
  SOLDIER
  	$arg     = newSViv(0);
-	SV * obj = newSVrv($arg, \"Soldier\");
- 	sv_setiv(obj, (IV)$var);
- 	SvREADONLY_on(obj);
- 	$arg;
+	sv_setiv(newSVrv($arg, \"Soldier\"), (IV)$var);
+	SvREADONLY_on(SvRV($arg));
+	$arg;
 
 
 Save that file as test/My-Soldier-1.02/typemap and place a copy of it

@@ -9,7 +9,7 @@ our @ISA = qw(Exporter);
 
 our @EXPORT_OK = qw(c2xs);
 
-our $VERSION = 0.13;
+our $VERSION = 0.14;
 
 sub c2xs {
     eval {require "Inline/C.pm"};
@@ -24,9 +24,7 @@ sub c2xs {
        {
        'AUTOWRAP' => 0,
        'AUTO_INCLUDE' => '',
-       'TYPEMAPS' => [],
        'LIBS' => [],
-       'INC' => '',
        'VERSION' => 0,
        'WRITE_MAKEFILE_PL' => 0,
        'WRITE_PM' => 0,
@@ -137,17 +135,30 @@ sub c2xs {
     # Not sure that this achieves anything in the context of InlineX::C2XS.
     if($config_options->{MAKE}) {$o->{ILSM}{MAKE} = $config_options->{MAKE}}
 
-    if($config_options->{TYPEMAPS}) {
-      unless(ref($config_options->{TYPEMAPS}) eq 'ARRAY') {die "TYPEMAPS must be passed as an array reference"}
-      for(@{$config_options->{TYPEMAPS}}) {
-         die "Couldn't locate the typemap $_" unless -f $_;
+    if(exists($config_options->{TYPEMAPS})) {
+      my $val =$config_options->{TYPEMAPS};
+      if(ref($val) eq 'ARRAY') {
+        for(@{$val}) {
+           die "Couldn't locate the typemap $_" unless -f $_;
+        }
+        $o->{ILSM}{MAKEFILE}{TYPEMAPS} = $val;
       }
-      $o->{ILSM}{MAKEFILE}{TYPEMAPS} = $config_options->{TYPEMAPS}; 
+      else {
+        my @vals = split /\s+/, $val;
+        for(@vals) {
+           die "Couldn't locate the typemap $_" unless -f $_;
+        }
+        $o->{ILSM}{MAKEFILE}{TYPEMAPS} = \@vals; 
+      }
+    }
+    else {
+      $o->{ILSM}{MAKEFILE}{TYPEMAPS} = [];
     }
 
+    my @uncorrupted_typemaps = @{$o->{ILSM}{MAKEFILE}{TYPEMAPS}};
+
     if($config_options->{LIBS}) {
-      unless(ref($config_options->{LIBS}) eq 'ARRAY') {die "LIBS must be passed as an array reference"}
-      $o->{ILSM}{MAKEFILE}{LIBS} = $config_options->{LIBS}
+        $o->{ILSM}{MAKEFILE}{LIBS} = $config_options->{LIBS};
     }
 
     if($config_options->{PREFIX}) {$o->{ILSM}{XS}{PREFIX} = $config_options->{PREFIX}}
@@ -162,7 +173,13 @@ sub c2xs {
 
     if($config_options->{CCFLAGS}) {$o->{ILSM}{MAKEFILE}{CCFLAGS} = " " . $config_options->{CCFLAGS}}
 
-    if($config_options->{INC}) {$o->{ILSM}{MAKEFILE}{INC} .= " $config_options->{INC}"}
+    if(exists($config_options->{INC})) {
+      if(ref($config_options->{INC}) eq 'ARRAY') {$o->{ILSM}{MAKEFILE}{INC} = join ' ', @{$config_options->{INC}};}
+      else {$o->{ILSM}{MAKEFILE}{INC} = $config_options->{INC};}
+    }
+    else {$o->{ILSM}{MAKEFILE}{INC} = ''}
+
+    my $uncorrupted_inc = $o->{ILSM}{MAKEFILE}{INC};
 
     if($config_options->{LD}) {$o->{ILSM}{MAKEFILE}{LD} = " " . $config_options->{LD}}
 
@@ -177,8 +194,13 @@ sub c2xs {
     if($config_options->{OPTIMIZE}) {$o->{ILSM}{MAKEFILE}{OPTIMIZE} = " " . $config_options->{OPTIMIZE}}
 
     if($config_options->{USING}) {
-      unless(ref($config_options->{USING}) eq 'ARRAY') {die "USING must be passed as an array reference"}
-      $o->{CONFIG}{USING} = $config_options->{USING};
+      my $val = $config_options->{USING};
+      if(ref($val) eq 'ARRAY') {
+        $o->{CONFIG}{USING} = $val;
+      }
+      else {
+        $o->{CONFIG}{USING} = [$val];
+      }
       Inline::push_overrides($o);
     }
 
@@ -187,6 +209,8 @@ sub c2xs {
     _build($o, $need_inline_h);
 
     if($config_options->{WRITE_MAKEFILE_PL}) {
+      $o->{ILSM}{MAKEFILE}{INC} = $uncorrupted_inc; # Make sure cwd is included only if it was specified.
+      $o->{ILSM}{MAKEFILE}{TYPEMAPS} = \@uncorrupted_typemaps; # Otherwise the standard perl typemap gets included.
       if($config_options->{VERSION}) {$o->{API}{version} = $config_options->{VERSION}}
       else {warn "'VERSION' being set to '0.00' in the Makefile.PL. Did you supply a correct version number to c2xs() ?"}
       print "Writing Makefile.PL in the ", $o->{API}{build_dir}, " directory\n";
@@ -279,7 +303,7 @@ InlineX::C2XS - Convert from Inline C code to XS.
   c2xs($module_name, $package_name);
 
   # Or Create /some/where/else/XS_MOD.xs from $code
-  $code = 'void foo() {printf("Hello World\n");}';
+  $code = 'void foo() {printf("Hello World\n");}' . "\n\n";
   c2xs($module_name, $package_name, $build_dir, {CODE => $code});
 
   # Or Create /some/where/else/XS_MOD.xs from the C code that's in
@@ -374,8 +398,7 @@ InlineX::C2XS - Convert from Inline C code to XS.
 
   AUTOWRAP
    Set this to a true value to enable Inline::C's AUTOWRAP capability.
-   (There's no point in specifying a false value, as "false" is the 
-   default anyway.) eg:
+   eg:
 
     AUTOWRAP => 1,
   ----
@@ -412,7 +435,7 @@ InlineX::C2XS - Convert from Inline C code to XS.
   CODE
    A string containing the C code. eg:
 
-    CODE => 'void foo() {printf("Hello World\n";}',
+    CODE => 'void foo() {printf("Hello World\n";}' . "\n\n",
   ----
 
   INC
@@ -420,7 +443,8 @@ InlineX::C2XS - Convert from Inline C code to XS.
    sense to assign this key only when AUTOWRAP and/or WRITE_MAKEFILE_PL
    are set to a true value. eg:
 
-    INC => '-I/my/includes/dir',
+    INC => '-I/my/includes/dir -I/other/includes/dir',
+    INC => ['-I/my/includes/dir', '-I/other/includes/dir'],
   ----
 
   LD
@@ -441,8 +465,9 @@ InlineX::C2XS - Convert from Inline C code to XS.
   LIBS
    The value(s) specified become the LIBS search path. It makes sense
    to assign this key only if WRITE_MAKEFILE_PL is set to a true value.
-   (Must be an array reference.) eg
+   eg:
 
+    LIBS => '-L/somewhere -lsomelib -L/elsewhere -lotherlib',
     LIBS => ['-L/somewhere -lsomelib', '-L/elsewhere -lotherlib'],
   ----
 
@@ -483,16 +508,19 @@ InlineX::C2XS - Convert from Inline C code to XS.
 
   TYPEMAPS
    The value(s) specified are added to the list of typemaps.
-  (Must be an array reference.) eg:
+   eg:
 
+    TYPEMAPS =>'my_typemap my_other_typemap',
     TYPEMAPS =>['my_typemap', 'my_other_typemap'],
   ----
 
   USING
    If you want Inline to use ParseRegExp.pm instead of RecDescent.pm for 
-   the parsing, then specify:
+   the parsing, then specify either:
 
     USING => ['ParseRegExp'],
+    or
+    USING => 'ParseRegExp',
   ----
 
   VERSION
@@ -505,9 +533,8 @@ InlineX::C2XS - Convert from Inline C code to XS.
 
   WRITE_MAKEFILE_PL
    Set this to to a true value if you want the Makefile.PL to be
-   generated. (There's no point in specifying a false value, as "false"
-   is the default anyway. You should also assign the 'VERSION' key to 
-   the correct value when WRITE_MAKEFILE_PL is set.) eg:
+   generated. (You should also assign the 'VERSION' key to the
+   correct value when WRITE_MAKEFILE_PL is set.) eg:
 
     WRITE_MAKEFILE_PL => 1,
   ----
@@ -516,8 +543,10 @@ InlineX::C2XS - Convert from Inline C code to XS.
    Set this to a true value if you want a .pm file to be generated.
    You'll also need to assign the 'VERSION' key appropriately. 
    Note that it's a fairly simplistic .pm file - no POD, no perl 
-   subroutines, no Exporter, no warnings - but it will allow the 
-   utilisation of all of the XSubs in the XS file.
+   subroutines, no exported subs, no warnings - but it will allow 
+   the utilisation of all of the XSubs in the XS file. eg:
+
+    WRITE_PM => 1,
   ----
 
 =head1 TODO
@@ -533,8 +562,10 @@ InlineX::C2XS - Convert from Inline C code to XS.
 
 =head1 LICENSE
 
-    This perl code is free software; you may redistribute it
-    and/or modify it under the same terms as Perl itself.
+  This program is free software; you may redistribute it and/or 
+  modify it under the same terms as Perl itself.
+  Copyright 2006-2009, Sisyphus
+
 
 =head1 AUTHOR
 

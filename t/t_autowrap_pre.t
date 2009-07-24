@@ -1,3 +1,4 @@
+# Same as t_autowrap.t, but using ParseRegExp.pm.
 use warnings;
 use strict;
 use InlineX::C2XS qw(c2xs);
@@ -5,9 +6,10 @@ use InlineX::C2XS qw(c2xs);
 print "1..2\n";
 
 my %config_opts = (
+                  'USING' => 'ParseRegExp',
                   'AUTOWRAP' => 1,
                   'AUTO_INCLUDE' => '#include <simple.h>' . "\n" .'#include "src/extra_simple.h"',
-                  'TYPEMAPS' => 'src/simple_typemap.txt',
+                  'TYPEMAPS' => ['src/simple_typemap.txt'],
                   'INC' => '-Isrc',
                   );
 
