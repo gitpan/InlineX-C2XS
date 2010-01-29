@@ -7,6 +7,7 @@ C2XS.pm
 t/t_c.t
 t/t_autowrap.t
 t/t_code.t
+t/t_exports.t
 t/t_src_location.t
 t/t_makefile_pl.t
 t/t_c_pre.t

@@ -1,7 +1,7 @@
 MyMod.pm, MyMod.xs, INLINE.h and Makefile.PL were created by cd'ing to the directory that contains 
 this README file and running:
 
-perl -MInlineX::C2XS -e "InlineX::C2XS::c2xs('MyMod', 'MyMod', '.', {AUTOWRAP => 1, VERSION => 0.01, WRITE_MAKEFILE_PL => 1, WRITE_PM => 1})"
+perl -MInlineX::C2XS -e "InlineX::C2XS::c2xs('MyMod', 'MyMod', '.', {AUTOWRAP => 1, VERSION => 0.01, WRITE_MAKEFILE_PL => 1, WRITE_PM => 1, EXPORT_OK_ALL => 1, EXPORT_TAGS_ALL => 'all'})"
 
 Probably a good idea to verify this procedure yourself - ie remove MyMod.pm, MyMod.xs,
 INLINE.h and Makefile.PL from this directory, cd to this directory and run the same one

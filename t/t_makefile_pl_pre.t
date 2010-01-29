@@ -242,48 +242,50 @@ else {$ok .= 'a'}
 
 if($ok eq 'a') {
   my @pm = <RD>;
-  if($pm[0] eq "package test;\n") {$ok .= 'b'}
+  if($pm[0] =~ /^## This file generated/) {$ok .= 'b'}
   else {warn "0:*$pm[0]*\n"}
-  if($pm[1] eq "use strict;\n") {$ok .= 'c'}
+  if($pm[1] eq "package test;\n") {$ok .= 'c'}
   else {warn "1:*$pm[1]*\n"}
-  if($pm[2] eq "\n") {$ok .= 'C'}
-  else {warn "2:*$pm[2]*\n"}
-  if($pm[3] eq "require Exporter;\n") {$ok .= 'd'}
-  else {warn "3:*$pm[3]*\n"}
-  if($pm[4] eq "*import = \\&Exporter::import;\n") {$ok .= 'e'}
-  else {warn "4:*$pm[4]*\n"}
-  if($pm[5] eq "require DynaLoader;\n") {$ok .= 'f'}
-  else {warn "5:*$pm[5]*\n"}
-  if($pm[6] eq "\n") {$ok .= 'g'}
-  else {warn "6:*$pm[6]*\n"}
-  if($pm[7] eq "\$test::VERSION = '0.42';\n") {$ok .= 'h'}
-  else {warn "7:*$pm[7]*\n"}
-  if($pm[8] eq "\n") {$ok .= 'i'}
-  else {warn "8:*$pm[8]*\n"}
-  if($pm[9] eq "DynaLoader::bootstrap test \$test::VERSION;\n") {$ok .= 'j'}
-  else {warn "9:*$pm[9]*\n"}
-  if($pm[10] eq "\n") {$ok .= 'J'}
-  else {warn "10:*$pm[10]*\n"}
-  if($pm[11] eq "\@test::EXPORT = ();\n") {$ok .= 'k'}
-  else {warn "11:*$pm[11]*\n"}
-  if($pm[12] eq "\@test::EXPORT_OK = ();\n") {$ok .= 'l'}
-  else {warn "12:*$pm[12]*\n"}
-  if($pm[13] eq "\n") {$ok .= 'L'}
-  else {warn "13:*$pm[13]*\n"}
-  if($pm[14] eq "sub dl_load_flags {0} # Prevent DynaLoader from complaining and croaking\n") {$ok .= 'm'}
-  else {warn "14:*$pm[14]*\n"}
-  if($pm[15] eq "\n") {$ok .= 'n'}
-  else {warn "15:*$pm[15]*\n"}
-  if($pm[16] eq "1;\n") {$ok .= 'o'}
-  else {warn "16:*$pm[16]*\n"}
+  if($pm[2] eq "use strict;\n") {$ok .= 'd'}
+  else {warn "1:*$pm[2]*\n"}
+  if($pm[3] eq "\n") {$ok .= 'D'}
+  else {warn "2:*$pm[3]*\n"}
+  if($pm[4] eq "require Exporter;\n") {$ok .= 'e'}
+  else {warn "3:*$pm[4]*\n"}
+  if($pm[5] eq "*import = \\&Exporter::import;\n") {$ok .= 'f'}
+  else {warn "4:*$pm[5]*\n"}
+  if($pm[6] eq "require DynaLoader;\n") {$ok .= 'g'}
+  else {warn "5:*$pm[6]*\n"}
+  if($pm[7] eq "\n") {$ok .= 'h'}
+  else {warn "6:*$pm[7]*\n"}
+  if($pm[8] eq "\$test::VERSION = '0.42';\n") {$ok .= 'i'}
+  else {warn "7:*$pm[8]*\n"}
+  if($pm[9] eq "\n") {$ok .= 'j'}
+  else {warn "8:*$pm[9]*\n"}
+  if($pm[10] eq "DynaLoader::bootstrap test \$test::VERSION;\n") {$ok .= 'k'}
+  else {warn "9:*$pm[10]*\n"}
+  if($pm[11] eq "\n") {$ok .= 'l'}
+  else {warn "10:*$pm[11]*\n"}
+  if($pm[12] eq "\@test::EXPORT = ();\n") {$ok .= 'm'}
+  else {warn "11:*$pm[12]*\n"}
+  if($pm[13] eq "\@test::EXPORT_OK = ();\n") {$ok .= 'n'}
+  else {warn "12:*$pm[13]*\n"}
+  if($pm[14] eq "\n") {$ok .= 'o'}
+  else {warn "13:*$pm[14]*\n"}
+  if($pm[15] eq "sub dl_load_flags {0} # Prevent DynaLoader from complaining and croaking\n") {$ok .= 'p'}
+  else {warn "14:*$pm[15]*\n"}
+  if($pm[16] eq "\n") {$ok .= 'q'}
+  else {warn "15:*$pm[16]*\n"}
+  if($pm[17] eq "1;\n") {$ok .= 'r'}
+  else {warn "16:*$pm[17]*\n"}
   eval{close(RD) or die $!;};
-  if(!$@) {$ok .= 'p'}
+  if(!$@) {$ok .= 's'}
   else {warn $@, "\n"}
 }
 
 if(!unlink('src/test.pm')) { warn "Couldn't unlink src/test.pm\n"}
 
-if($ok eq 'abcCdefghijJklLmnop') {print "ok 4\n"}
+if($ok eq 'abcdDefghijklmnopqrs') {print "ok 4\n"}
 else {
   warn $ok, "\n";
   print "not ok 4\n";
