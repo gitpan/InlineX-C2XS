@@ -1,3 +1,9 @@
+- 0.16 ... Add config option '_TESTING' (and tests)
+           Inline pre-requisite version now 0.46_01
+           Add config option 'USE'
+           Substitution regex added to t_makefile_pl_pre.t and
+            t_makefile_pl.t - to cater for recent ActivePerls
+
 - 0.15 ... Add config options EXPORT_ALL, EXPORT_OK_ALL and EXPORT_TAGS_ALL
 
 - 0.14 ... Requires Inline-0.45 or later. 

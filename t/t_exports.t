@@ -8,7 +8,7 @@ my $code = "void include() {}\nvoid __include() {}\nvoid inc_lude() {}\nvoid inc
            "void _notinclude() {}\nvoid _not_include() {}\nvoid _not__include() {}\nvoid _notinclude_() {}\n";
 
 c2xs('exports','exports','.',
-    {VERSION => 0.1, WRITE_PM => 1, CODE => $code,
+    {VERSION => 0.1, WRITE_PM => 1, CODE => $code, USE => ['strict'],
      EXPORT_ALL => 1, EXPORT_OK_ALL => 1, EXPORT_TAGS_ALL => 'all'});
 
 if(!unlink('exports.xs')) {

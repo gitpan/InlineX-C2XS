@@ -56,7 +56,7 @@ if($ok) {
        #$rd2[$i] =~ s/\r//g;
 
      if($rd1[$i] ne $rd2[$i]) {
-       warn "At line $i:\n     GOT:", $rd1[$i], "*\nEXPECTED:", $rd2[$i], "*\n";
+       warn "At line ", $i + 1, ":\n     GOT:", $rd1[$i], "*\nEXPECTED:", $rd2[$i], "*\n";
        $ok2 = 0;
        last;
      }
@@ -115,7 +115,7 @@ if($ok) {
        #$rd2[$i] =~ s/\r//g;
 
      if($rd1[$i] ne $rd2[$i]) {
-       warn "At line $i:\n     GOT:", $rd1[$i], "*\nEXPECTED:", $rd2[$i], "*\n";
+       warn "At line ", $i + 1, ":\n     GOT:", $rd1[$i], "*\nEXPECTED:", $rd2[$i], "*\n";
        $ok2 = 0;
        last;
      }

@@ -26,6 +26,7 @@ my %config_opts = (
                   'INC' => '-Isrc',
                   'WRITE_MAKEFILE_PL' => 1,
                   'WRITE_PM' => 1,
+                  'USE' => ['strict'],
                   'LIBS' => '-L/anywhere -lbogus',
                   'VERSION' => 0.42,
                   'BUILD_NOISY' => 0,
@@ -85,7 +86,7 @@ if($ok) {
        #$rd2[$i] =~ s/\r//g;
 
      if($rd1[$i] ne $rd2[$i]) {
-       warn "At line $i:\n     GOT:", $rd1[$i], "*\nEXPECTED:", $rd2[$i], "*\n";
+       warn "At line ", $i + 1, ":\n     GOT:", $rd1[$i], "*\nEXPECTED:", $rd2[$i], "*\n";
        $ok2 = 0;
        last;
      }
@@ -144,7 +145,7 @@ if($ok) {
        #$rd2[$i] =~ s/\r//g;
 
      if($rd1[$i] ne $rd2[$i]) {
-       warn "At line $i:\n     GOT:", $rd1[$i], "*\nEXPECTED:", $rd2[$i], "*\n";
+       warn "At line ", $i + 1, ":\n     GOT:", $rd1[$i], "*\nEXPECTED:", $rd2[$i], "*\n";
        $ok2 = 0;
        last;
      }
@@ -182,6 +183,7 @@ my $res;
 
 if($ok) {
   for(@rd1) {
+     $_ =~ s/\\\\/\\/g; # For recent ActivePerls.
      if ($_ =~ /use ExtUtils::MakeMaker;/) {$res .= 'a'}
      if ($_ =~ /my %options =/) {$res .= 'b'}
      if ($_ =~ /INC/) {$res .= 'c'}

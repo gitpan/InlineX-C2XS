@@ -15,6 +15,7 @@ t/t_autowrap_pre.t
 t/t_code_pre.t
 t/t_src_location_pre.t
 t/t_makefile_pl_pre.t
+t/t_using.t
 t/pod.t
 
 expected.h
