@@ -1,6 +1,11 @@
+- 0.17 ... Add PREREQ_PM config option
+
 - 0.16 ... Add config option '_TESTING' (and tests)
+
            Inline pre-requisite version now 0.46_01
+
            Add config option 'USE'
+
            Substitution regex added to t_makefile_pl_pre.t and
             t_makefile_pl.t - to cater for recent ActivePerls
 

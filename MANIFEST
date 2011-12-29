@@ -4,6 +4,8 @@ CHANGES
 C2XS-Cookbook.pod
 Makefile.PL
 C2XS.pm
+
+t/pod.t
 t/t_c.t
 t/t_autowrap.t
 t/t_code.t
@@ -15,8 +17,8 @@ t/t_autowrap_pre.t
 t/t_code_pre.t
 t/t_src_location_pre.t
 t/t_makefile_pl_pre.t
+t/t_prereq_pm.t
 t/t_using.t
-t/pod.t
 
 expected.h
 expected_c.txt
@@ -35,3 +37,5 @@ demos/autowrap/MyMod.xs
 demos/autowrap/README
 demos/autowrap/src/MyMod.c
 demos/autowrap/t/test.t
+
+prereq_pm_test/exists
