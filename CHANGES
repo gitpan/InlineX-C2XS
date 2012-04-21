@@ -1,3 +1,7 @@
+- 0.18 ... Add CPPFLAGSEX, BOOT_F and PRE_HEAD config options.
+
+           Add script.in (which generates the c2xs script)
+
 - 0.17 ... Add PREREQ_PM config option
 
 - 0.16 ... Add config option '_TESTING' (and tests)
