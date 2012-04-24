@@ -47,6 +47,9 @@ Valid options are:
 --typemaps=<value>     eq --typemaps=type1 type2
 --use=<value>          eg --use=ABC::M1 BCD::M2
 --using=<value>        eg --using=ParseRegExp (Default is ParseRecDescent)
+--version=<value>      eg --version=0.42
+--write_pm=<value>     eg --write_pm=1 (Default is 0)
+--write_makefile_pl=<value> eg --write_makefile_pl=1 (Default is 0)
 ";
       exit 0;
   }
@@ -62,8 +65,8 @@ die " A '--m=' argument (specifying the module name) must be provided on the\n",
 
 $argv =~ s/\-\-src=/\-\-src_location=/i;
 
-my @allow = @InlineX::C2XS::allowable_config_keys; # Needs next version of InlineX::C2XS
-print "\@allow: @allow\n";
+my @allow = @InlineX::C2XS::allowable_config_keys;
+#print "\@allow: @allow\n";
 
 for(@allow) {$_ = '--' . $_ .'='}
 push @allow, '--M=', '--P=', '--BD=';
@@ -136,9 +139,22 @@ print "\nThe following arguments will be passed to InlineX::C2XS::c2xs():\n";
 print "  Module Name     = *${m}*\n";
 print "  Package Name    = *${p}*\n";
 print "  Build Directory = *${bd}*\n";
-for(keys(%opts)) {
-  print "  $_ = *$opts{$_}*\n";
+for(keys(%opts)) { 
+  if($_ eq 'USE') { # $opts{USE} is an array ref.
+    print "  $_ => [qw(@{$opts{$_}})]\n";
+  } 
+  elsif($_ eq 'PREREQ_PM') { # $opts{PREREQ_PM} is a hash ref.
+    my %h = %{$opts{$_}};
+    print "  $_ => {\n";
+    for my $k(keys(%h)) {
+      print "        *$k* => *$h{$k}*,\n";
+      }
+    print "        }\n";
+  } 
+  else {print "  $_ => *$opts{$_}*\n";}
 }
+
+print "\n";
 
 c2xs($m, $p, $bd, \%opts);
 

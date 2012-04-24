@@ -1,7 +1,6 @@
 use ExtUtils::MakeMaker;
 
-my $file = $^O =~ /MSWin32/i ? 'c2xs'
-                             : 'c2xs';
+my $file = 'c2xs';
 
 open RD, '<', 'script.in' or die "Can't open script.in for reading: $!";
 open OUT, '>', $file or die "Can't open $file for writing: $!";
@@ -27,9 +26,10 @@ my %options =
                 'Inline::C'  => 0.46_01,
                },
   VERSION_FROM => 'C2XS.pm',
-  #PL_FILES => {c2xs.PL => 'c2xs'},
+
+
   EXE_FILES => [$file],
-  clean => {FILES => '_Inline_test c2xs'},
+  clean => {FILES => '_Inline_test c2xs exports.pm exports.xs'},
   );
 
 WriteMakefile(%options);

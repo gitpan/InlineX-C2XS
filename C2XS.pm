@@ -9,7 +9,7 @@ our @ISA = qw(Exporter);
 
 our @EXPORT_OK = qw(c2xs);
 
-our $VERSION = 0.18;
+our $VERSION = 0.19;
 
 my $config_options;
 
@@ -334,7 +334,7 @@ sub _write_pm {
       $length = $offset;
     }
 
-    unless($config_options->{EXPORT_OK_ALL}) {
+    unless($config_options->{EXPORT_OK_ALL} || $config_options->{EXPORT_TAGS_ALL}) {
       print WR "\@", $o->{API}{module}, "::EXPORT_OK = ();\n\n";
     }
     else {
