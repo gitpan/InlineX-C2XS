@@ -4,7 +4,7 @@ name:         InlineX-C2XS
 version_from: C2XS.pm
 installdirs:  site
 requires:
-    Inline::C:                     0.44
+    Inline::C:                     0.47
 
 no_index:
   directory:

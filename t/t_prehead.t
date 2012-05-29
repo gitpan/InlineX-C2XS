@@ -1,11 +1,11 @@
 use warnings;
 use strict;
 use InlineX::C2XS qw(c2xs);
-
-print "1..4\n";
+use Test::More tests => 5;
+use Test::Warn;
 
 my $xs = './testing/test.xs';
-my $seen = 0;
+my ($seen_headers, $seen_target) = (0, 0);
 
 my %config_opts = (
                   'AUTOWRAP' => 1,
@@ -15,31 +15,37 @@ my %config_opts = (
                   'INC' => '-Isrc',
                   );
 
-c2xs('test', 'test', './testing', \%config_opts);
+my $w1 = 'Unsuccessful stat';
+warning_like {c2xs('test', 'test', './testing', \%config_opts)} qr/$w1/, 'test 1';
 
 open RD, '<', $xs or die "Can't open $xs for reading: $!";
 
-while(<RD>) {
-  if($_ =~ /EXTERN/) { $seen++ }
-  if($_ =~ /MUMBO_JUMBO/) {
-    if($seen) {
-      warn "\$seen: $seen\n";
-      print "not ok 1\n";
-      }
-    else {print "ok 1\n"}
-  }  
-} # while
+# Check that MUMBO_JUMBO is defined before the inclusion of EXTERN.h.
 
-if($seen == 1) {print "ok 2\n"}
-else {
-  warn "\$seen: $seen\n";
-  print "not ok 2\n";
+while(<RD>) {
+  if($_ =~ /EXTERN\.h/) { $seen_headers++ }
+  if($_ =~ /MUMBO_JUMBO/) {
+    $seen_target++;
+    if($seen_headers) {
+      warn "\$seen_headers: $seen_headers\n";
+      }
+    ok($seen_headers == 0 && $seen_target == 1, 'test 2');
+  }  
 }
+
+
+if($seen_headers != 1) {
+  warn "\$seen_headers: $seen_headers\n";
+}
+
+ok($seen_headers == 1, 'test 3');
 
 close RD or die "Can't close $xs after reading: $!";
 
 $xs = './testing2/test.xs';
-$seen = 0;
+
+($seen_headers, $seen_target) = (0, 0);
+
 $config_opts{PRE_HEAD} = 't/prehead.in';
 
 c2xs('test', 'test', './testing2', \%config_opts);
@@ -47,21 +53,21 @@ c2xs('test', 'test', './testing2', \%config_opts);
 open RD2, '<', $xs or die "Can't open $xs for reading: $!";
 
 while(<RD2>) {
-  if($_ =~ /EXTERN/) { $seen++ }
+  if($_ =~ /EXTERN\.h/) { $seen_headers++ }
   if($_ =~ /SOMETHING_ELSE/) {
-    if($seen) {
-      warn "\$seen: $seen\n";
-      print "not ok 3\n";
+    $seen_target++;
+    if($seen_headers) {
+      warn "\$seen_headers: $seen_headers\n";
       }
-    else {print "ok 3\n"}
+    ok($seen_headers == 0 && $seen_target == 1, 'test 4');
   }  
-} # while
-
-if($seen == 1) {print "ok 4\n"}
-else {
-  warn "\$seen: $seen\n";
-  print "not ok 4\n";
 }
+
+if($seen_headers != 1) {
+  warn "\$seen_headers: $seen_headers\n";
+}
+
+ok($seen_headers == 1, 'test 5');
 
 close RD2 or die "Can't close $xs after reading: $!";
 

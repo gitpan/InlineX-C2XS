@@ -26,7 +26,8 @@ Valid options are:
                        instead. 
 --ccflagsex=<value>    eg --ccflagsex=-DMY_DEFINE
 --code=<code>          eg --code=void foo(){printf(\\\"Hi\\n\\\")};
-                            (But use '-src_location=' instead) 
+                            (But use '-src_location=' instead)
+--dist=<value>         eg --dist=1 (Default is 0)
 --export_all=<value>   eg --export_all=1  (Default value is 0)
 --export_ok_all=<value>   eg --export_ok_all=1  (Default value is 0)
 --export_tags_all=<value> eg --export_tags_all=all
@@ -35,6 +36,7 @@ Valid options are:
 --lddlflags=<value>    eg --lddlflags=-s
 --libs=<value>         eg --libs=-L/here -lib1 -L/there -llib2
 --make=<value>         eg --make=pmake     (Untested)
+--manif=<value>        eg --manif=1 (Default is 0)
 --myextlib=<value>     eg --myextlib=/path/to/some.so
 --optimize=<value>     eg --optimize=-g -O3
 --prefix=<value>       eg --prefix=FOO_

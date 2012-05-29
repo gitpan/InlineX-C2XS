@@ -9,15 +9,17 @@ our @ISA = qw(Exporter);
 
 our @EXPORT_OK = qw(c2xs);
 
-our $VERSION = 0.19;
+our $VERSION = '0.22';
 
 my $config_options;
 
-our @allowable_config_keys = ('AUTOWRAP', 'AUTO_INCLUDE', 'CODE', 'TYPEMAPS', 'LIBS', 'INC', 
-        'WRITE_MAKEFILE_PL', 'BUILD_NOISY', 'BOOT', 'BOOT_F', 'EXPORT_ALL', 'EXPORT_OK_ALL',
+our @allowable_config_keys = ('AUTOWRAP', 'AUTO_INCLUDE', 'CODE', 'DIST', 'TYPEMAPS', 'LIBS', 'INC', 
+        'WRITE_MAKEFILE_PL', 'BUILD_NOISY', 'BOOT', 'BOOT_F', 'EXPORT_ALL', 'EXPORT_OK_ALL', 'MANIF',
         'EXPORT_TAGS_ALL', 'MAKE', 'PREFIX', 'PREREQ_PM', 'CCFLAGS', 'CCFLAGSEX', 'LD', 'LDDLFLAGS',
         'MYEXTLIB', 'OPTIMIZE', 'PRE_HEAD', 'CC', 'SRC_LOCATION', '_TESTING', 'USE', 'USING',
-        'WRITE_PM', 'VERSION');       
+        'WRITE_PM', 'VERSION');
+
+##=========================##        
 
 sub c2xs {
     eval {require "Inline/C.pm"};
@@ -133,7 +135,13 @@ sub c2xs {
 
     if($config_options->{AUTOWRAP}) {$o->{ILSM}{AUTOWRAP} = 1}
 
-    if($config_options->{BOOT}) {$o->{ILSM}{XS}{BOOT} = $config_options->{BOOT}} 
+    if($config_options->{BOOT}) {$o->{ILSM}{XS}{BOOT} = $config_options->{BOOT}}
+
+    if($config_options->{DIST}) {
+      $config_options->{WRITE_MAKEFILE_PL} = 1;
+      $config_options->{WRITE_PM} = 1;
+      $config_options->{MANIF} = 1;
+    } 
 
     if($config_options->{BOOT_F}) {
       my $code;
@@ -261,8 +269,14 @@ sub c2xs {
         $o->{API}{version} = '0.00';
       }
     _write_pm($o);
-    }    
+    }
+
+    if($config_options->{MANIF}) {
+      _write_manifest($modfname, $build_dir, $config_options, $need_inline_h);
+    }   
 }
+
+##=========================## 
 
 sub _build {
     my $o = shift;
@@ -280,12 +294,16 @@ sub _build {
     }
 }
 
+##=========================## 
+
 sub _check_config_keys {
     for(@allowable_config_keys) {
         return 1 if $_ eq $_[0]; # it's a valid config option
     }
     return 0;                    # it's an invalid config option
 }
+
+##=========================## 
 
 sub _write_pm {
     my $o = shift;
@@ -376,6 +394,35 @@ sub _write_pm {
     close(WR) or die "Couldn't close the .pm file after writing to it: $!";
 }
 
+##=========================## 
+
+sub _write_manifest {
+    my $m = shift;  # name of pm and xs files
+    my $bd = shift; # build directory
+    my $c = shift;  # config options
+    my $ih = shift; # INLINE.h is present ?
+
+    print "Writing the MANIFEST file in the $bd directory\n";
+
+    open WRM, '>', "$bd/MANIFEST" or die "Can't open MANIFEST for writing: $!";
+    print WRM "MANIFEST\n";
+    if($c->{WRITE_PM}) {print WRM "$m.pm\n"}
+    if($ih) {print WRM "INLINE.h\n"}
+    print WRM "$m.xs\n";
+    if($c->{WRITE_MAKEFILE_PL}) {
+      print WRM "Makefile.PL\n";
+    }
+    close WRM or die "Can't close $bd/MANIFEST after writing: $!";
+}
+
+##=========================## 
+
+##=========================## 
+
+##=========================## 
+
+##=========================## 
+
 1;
 
 __END__
@@ -439,6 +486,9 @@ InlineX::C2XS - Convert from Inline C code to XS.
   If a third argument is given, it's deemed to be the build directory
   unless it's a hash reference (in which case it's deemed to be the
   hash reference containing the additional config options).
+
+  As of version 0.19, a c2xs utility is also provided. It's just an
+  Inline::C2XS wrapper - see 'c2xs --help'.
 
 =head1 DESCRIPTION
 
@@ -563,6 +613,13 @@ InlineX::C2XS - Convert from Inline C code to XS.
     CODE => 'void foo() {printf("Hello World\n";}' . "\n\n",
   ----
 
+  DIST
+
+   If set, sets WRITE_MAKEFILE_PL => 1, WRITE_PM => 1, MANIF => 1. eg:
+
+    DIST => 1,
+  ----
+
   EXPORT_ALL
    Makes no sense to use this unless WRITE_PM has been set.
    Places all XSubs except those beginning with a *single* underscore (but not
@@ -627,6 +684,14 @@ InlineX::C2XS - Convert from Inline C code to XS.
    key only when WRITE_MAKEFILE_PL is set to a true value. eg:
 
     MAKE => 'pmake', # I have no idea whether that will work :-)
+  ----
+
+  MANIF
+   If true, the MANIFEST file will be written. (It will include all created
+   files.) eg:
+
+   MANIF => 1,
+
   ----
 
   MYEXTLIB
