@@ -9,7 +9,7 @@ use InlineX::C2XS 'c2xs';
 for(@ARGV) {
    if($_ =~ /\-\-help/i) {
       print "
-For more detailed explanation of the various options see the 
+For more detailed explanation of the various options see the
 InlineX::C2XS documentation.
 
 Valid options are:
@@ -23,7 +23,7 @@ Valid options are:
 --boot_f=<value>       eg --boot_f=/home/me/boot_code.ext
 --build_noisy=<value>  eg --build_noisy=0 (Default value is 1)
 --ccflags=<value>      Will clobber \$Config{ccflags}. Use '--ccflagsex='
-                       instead. 
+                       instead.
 --ccflagsex=<value>    eg --ccflagsex=-DMY_DEFINE
 --code=<code>          eg --code=void foo(){printf(\\\"Hi\\n\\\")};
                             (But use '-src_location=' instead)
@@ -43,9 +43,12 @@ Valid options are:
 --pre_head=<value>     eg --pre_head=/some/file.ext
 --prereq_pm=<value>    eg --prereq_pm=X::M1 1.23 ZZ::M2 0 (Must specify
                             name, space, version, space, name, ... etc)
+--prototype=<value>    eg --prototype=foo \$ bar DISABLE
+--prototypes=<value>   eg --prototypes=ENABLE (Default is DISABLE).
 --src=<value>               An alias for '--src_location='
 --src_location=<value> eg --src_location=/home/me/source.ext (See the
                             InlineX::C2XS docs.Default is './src/<mod>.c)
+--t=<value>            eg --t=1 (Default is 0.)
 --typemaps=<value>     eq --typemaps=type1 type2
 --use=<value>          eg --use=ABC::M1 BCD::M2
 --using=<value>        eg --using=ParseRegExp (Default is ParseRecDescent)
@@ -86,7 +89,7 @@ for(@keys) {
 
 
 die "We have ", scalar(@keys), " keys, but ", scalar(@vals), " values ... we need the same number of both ..."
-  if @vals != @keys; 
+  if @vals != @keys;
 
 for(my $i = 0; $i < @vals; $i++) {
   remove_leading_and_trailing_whitespace($vals[$i]);
@@ -105,7 +108,7 @@ for(my $i = 0; $i < @vals; $i++) {
 }
 
 my %opts;
-my ($m, $p, $bd); 
+my ($m, $p, $bd);
 
 for(my $i = 0; $i < @vals; $i++) {
    $keys[$i] =~ s/\-\-//;
@@ -129,6 +132,9 @@ for(my $i = 0; $i < @vals; $i++) {
    elsif($kname eq 'PREREQ_PM') {
      $opts{$kname} = fix_PREREQ_PM($vals[$i]);
    }
+   elsif($kname eq 'PROTOTYPE') {
+     $opts{$kname} = fix_PREREQ_PM($vals[$i]);
+   }
    else {
      $opts{$kname} = $vals[$i];
    }
@@ -141,10 +147,10 @@ print "\nThe following arguments will be passed to InlineX::C2XS::c2xs():\n";
 print "  Module Name     = *${m}*\n";
 print "  Package Name    = *${p}*\n";
 print "  Build Directory = *${bd}*\n";
-for(keys(%opts)) { 
+for(keys(%opts)) {
   if($_ eq 'USE') { # $opts{USE} is an array ref.
     print "  $_ => [qw(@{$opts{$_}})]\n";
-  } 
+  }
   elsif($_ eq 'PREREQ_PM') { # $opts{PREREQ_PM} is a hash ref.
     my %h = %{$opts{$_}};
     print "  $_ => {\n";
@@ -152,7 +158,7 @@ for(keys(%opts)) {
       print "        *$k* => *$h{$k}*,\n";
       }
     print "        }\n";
-  } 
+  }
   else {print "  $_ => *$opts{$_}*\n";}
 }
 

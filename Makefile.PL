@@ -25,14 +25,26 @@ my %options =
   (
   NAME     => 'InlineX::C2XS',
   PREREQ_PM => {
-                'Inline::C'  => 0.47,
+                'Inline::C'  => '0.54',
                 'Test::Warn' => $twv,
+                'File::Path'  => '2.08_01',
                },
   VERSION_FROM => 'C2XS.pm',
-
+  LICENSE  => 'perl',
 
   EXE_FILES => [$file],
-  clean => {FILES => '_Inline_test c2xs exports.pm exports.xs'},
+  clean => {FILES => '_Inline_test c2xs exports.pm exports.xs demos/context/FOO-0.01/*.*
+                      demos/context/FOO-0.01/MANIFEST demos/context/FOO-0.01/t/00load.t'},
+  META_MERGE => {
+   'meta-spec' => { version => 2 },
+    resources => {
+      repository => {
+        type => 'git',
+        url => 'https://github.com/sisyphus/inlinex-c2xs.git',
+        web => 'https://github.com/sisyphus/inlinex-c2xs',
+      },
+    },
+  },
   );
 
 WriteMakefile(%options);

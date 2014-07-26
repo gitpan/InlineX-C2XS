@@ -1,5 +1,5 @@
 use ExtUtils::MakeMaker;
-my %options = %{       
+my %options = %{
 {
   'TYPEMAPS' => [],
   'NAME' => 'MyMod',

@@ -2,7 +2,7 @@ use warnings;
 use strict;
 use InlineX::C2XS ('c2xs');
 
-print "1..8\n";
+print "1..9\n";
 
 my $outdir = "./prereq_pm_test";
 my $code = 'void foo() {printf("Hello World\n");}' . "\n\n";
@@ -14,8 +14,8 @@ c2xs('FOO', 'FOO', $outdir,
      }
     );
 
-my($M_e, $X_e, $PM_e, $MAN_e);
-   
+my($M_e, $X_e, $PM_e, $MAN_e, $T_e);
+
 if(-e "$outdir/Makefile.PL") {
   $M_e = 1;
   print "ok 1\n";
@@ -67,11 +67,11 @@ else {
 }
 
 if($MAN_e) {
-  my @w = ('FOO.pm', 'FOO.xs', 'Makefile.PL', 'MANIFEST');
+  my @w = ('FOO.pm', 'FOO.xs', 'Makefile.PL', 'MANIFEST', 't/00load.t');
   open RDMAN, '<', "$outdir/MANIFEST" or die "Couldn't open MANIFEST for reading: $!";
   my @h = <RDMAN>;
   close RDMAN or die "Couldn't close MANIFEST after reading: $!";
-  
+
   for my $h(@h) {chomp $h}
 
   if(manifest_compare(\@w, \@h)) {print "ok 7\n"}
@@ -84,6 +84,15 @@ if($MAN_e) {
 else {
   warn "Skipping tests 7 & 8 - MANIFEST was not generated\n";
   print "ok 7\nok 8\n";
+}
+
+if(-e "$outdir/t/00load.t") {
+  $T_e = 1;
+  print "ok 9\n";
+}
+else {
+  warn "$outdir/t/00load.t was not created\n";
+  print "not ok 9\n";
 }
 
 if($M_e) {
@@ -105,6 +114,13 @@ if($X_e) {
 if($MAN_e) {
   warn "Couldn't unlink MANIFEST\n"
     unless unlink "$outdir/MANIFEST";
+}
+
+if($T_e) {
+  warn "Couldn't unlink $outdir/t/00load.t\n"
+    unless unlink "$outdir/t/00load.t";
+  warn "Couldn't remove $outdir/t directory: $!"
+    unless rmdir "$outdir/t";
 }
 
 #===========================#

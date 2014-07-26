@@ -12,11 +12,11 @@ DynaLoader::bootstrap MyMod $MyMod::VERSION;
 
 @MyMod::EXPORT = ();
 @MyMod::EXPORT_OK = qw(
-    erf 
+    erf
     );
 
 %MyMod::EXPORT_TAGS = (all => [qw(
-    erf 
+    erf
     )]);
 
 sub dl_load_flags {0} # Prevent DynaLoader from complaining and croaking

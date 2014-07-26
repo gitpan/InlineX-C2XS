@@ -39,11 +39,11 @@ if($c[6]  eq                                                      "require DynaL
 else {warn "6:*$c[6]*\n"}
 if($c[7]  eq                                                                         "\n") {$ok .= 'i'}
 else {warn "7:*$c[7]*\n"}
-if($c[8]  eq                                              "\$exports::VERSION = '0.1';\n") {$ok .= 'j'}
+if($c[8]  eq                                                   "our \$VERSION = '0.1';\n") {$ok .= 'j'}
 else {warn "8:*$c[8]*\n"}
-if($c[9]  eq                                                                         "\n") {$ok .= 'k'}
+if($c[9]  eq                                              "\$VERSION = eval \$VERSION;\n") {$ok .= 'k'}
 else {warn "9:*$c[9]*\n"}
-if($c[10] eq                        "DynaLoader::bootstrap exports \$exports::VERSION;\n") {$ok .= 'l'}
+if($c[10] eq                               "DynaLoader::bootstrap exports \$VERSION;\n") {$ok .= 'l'}
 else {warn "10:*$c[10]*\n"}
 if($c[11] eq                                                                         "\n") {$ok .= 'm'}
 else {warn "11:*$c[11]*\n"}

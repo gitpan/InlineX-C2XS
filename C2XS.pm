@@ -7,19 +7,22 @@ use Config;
 require Exporter;
 our @ISA = qw(Exporter);
 
-our @EXPORT_OK = qw(c2xs);
+our @EXPORT_OK = qw(c2xs context);
 
-our $VERSION = '0.22';
+our $VERSION = '0.23';
+#$VERSION = eval $VERSION;
+
+use InlineX::C2XS::Context;
 
 my $config_options;
 
-our @allowable_config_keys = ('AUTOWRAP', 'AUTO_INCLUDE', 'CODE', 'DIST', 'TYPEMAPS', 'LIBS', 'INC', 
+our @allowable_config_keys = ('AUTOWRAP', 'AUTO_INCLUDE', 'CODE', 'DIST', 'TYPEMAPS', 'LIBS', 'INC',
         'WRITE_MAKEFILE_PL', 'BUILD_NOISY', 'BOOT', 'BOOT_F', 'EXPORT_ALL', 'EXPORT_OK_ALL', 'MANIF',
         'EXPORT_TAGS_ALL', 'MAKE', 'PREFIX', 'PREREQ_PM', 'CCFLAGS', 'CCFLAGSEX', 'LD', 'LDDLFLAGS',
-        'MYEXTLIB', 'OPTIMIZE', 'PRE_HEAD', 'CC', 'SRC_LOCATION', '_TESTING', 'USE', 'USING',
-        'WRITE_PM', 'VERSION');
+        'MYEXTLIB', 'OPTIMIZE', 'PRE_HEAD', 'PROTOTYPE', 'PROTOTYPES', 'CC', 'SRC_LOCATION', 'T',
+        '_TESTING', 'USE', 'USING', 'WRITE_PM', 'VERSION');
 
-##=========================##        
+##=========================##
 
 sub c2xs {
     eval {require "Inline/C.pm"};
@@ -30,18 +33,22 @@ sub c2xs {
     # Set the default for $build_dir.
     # (This will be overwritten by a supplied build_dir argument.)
     my $build_dir = '.';
-    
+
     if(@_) {
       if(ref($_[0]) eq "HASH") {
-        $config_options = shift; 
+        $config_options = shift;
+        # Check for invalid config options - and die if one is found
+        for(keys(%$config_options)) { die "$_ is an invalid config option" if !_check_config_keys($_)}
         if(@_) {die "Incorrect usage - there should be no arguments to c2xs() after the hash reference"}
       }
       else {$build_dir = shift}
     }
 
     if(@_) {
-      if(ref($_[0]) ne "HASH") {die "Fourth arg to c2xs() needs to be a hash containing config options ... but it's not !!\n"}  
+      if(ref($_[0]) ne "HASH") {die "Fourth arg to c2xs() needs to be a hash containing config options ... but it's not !!\n"}
       $config_options = shift;
+      # Check for invalid config options - and die if one is found
+      for(keys(%$config_options)) { die "$_ is an invalid config option" if !_check_config_keys($_)}
     }
 
     unless(-d $build_dir) {
@@ -66,7 +73,7 @@ sub c2xs {
     }
     elsif(exists($config_options->{SRC_LOCATION})) {
       open(RD, "<", $config_options->{SRC_LOCATION}) or die "Can't open ", $config_options->{SRC_LOCATION}, " for reading: $!";
-      while(<RD>) { 
+      while(<RD>) {
            $code .= $_;
            if($_ =~ /inline_stack_vars/i) {$need_inline_h = 1}
       }
@@ -74,7 +81,7 @@ sub c2xs {
     }
     else {
       open(RD, "<", "src/$modfname.c") or die "Can't open src/${modfname}.c for reading: $!";
-      while(<RD>) { 
+      while(<RD>) {
            $code .= $_;
            if($_ =~ /inline_stack_vars/i) {$need_inline_h = 1}
       }
@@ -126,8 +133,9 @@ sub c2xs {
     $o->{API}{module} = $module;
     $o->{API}{code} = $code;
 
-    # Check for invalid config options - and die if one is found
-    for(keys(%$config_options)) { die "$_ is an invalid config option" if !_check_config_keys($_)}
+    if(exists($config_options->{PROTOTYPE})) {$o->{CONFIG}{PROTOTYPE} = $config_options->{PROTOTYPE}}
+
+    if(exists($config_options->{PROTOTYPES})) {$o->{CONFIG}{PROTOTYPES} = $config_options->{PROTOTYPES}}
 
     if(exists($config_options->{BUILD_NOISY})) {$o->{CONFIG}{BUILD_NOISY} = $config_options->{BUILD_NOISY}}
 
@@ -141,12 +149,13 @@ sub c2xs {
       $config_options->{WRITE_MAKEFILE_PL} = 1;
       $config_options->{WRITE_PM} = 1;
       $config_options->{MANIF} = 1;
-    } 
+      $config_options->{T} = 1;
+    }
 
     if($config_options->{BOOT_F}) {
       my $code;
       open(RD, "<", $config_options->{BOOT_F}) or die "Can't open ", $config_options->{BOOT_F}, " for reading: $!";
-      while(<RD>) { 
+      while(<RD>) {
            $code .= $_;
            if($_ =~ /inline_stack_vars/i) {$need_inline_h = 1}
       }
@@ -171,7 +180,7 @@ sub c2xs {
         for(@vals) {
            die "Couldn't locate the typemap $_" unless -f $_;
         }
-        $o->{ILSM}{MAKEFILE}{TYPEMAPS} = \@vals; 
+        $o->{ILSM}{MAKEFILE}{TYPEMAPS} = \@vals;
       }
     }
     else {
@@ -273,15 +282,19 @@ sub c2xs {
 
     if($config_options->{MANIF}) {
       _write_manifest($modfname, $build_dir, $config_options, $need_inline_h);
-    }   
+    }
+
+    if($config_options->{T}) {
+      _write_test_script($module, $build_dir);
+    }
 }
 
-##=========================## 
+##=========================##
 
 sub _build {
     my $o = shift;
     my $need_inline_headers = shift;
-    
+
     $o->call('preprocess', 'Build Preprocess');
     $o->call('parse', 'Build Parse');
 
@@ -294,7 +307,7 @@ sub _build {
     }
 }
 
-##=========================## 
+##=========================##
 
 sub _check_config_keys {
     for(@allowable_config_keys) {
@@ -303,7 +316,7 @@ sub _check_config_keys {
     return 0;                    # it's an invalid config option
 }
 
-##=========================## 
+##=========================##
 
 sub _write_pm {
     my $o = shift;
@@ -313,7 +326,7 @@ sub _write_pm {
     my @use;
 
     if($config_options->{USE}) {
-      die "Value supplied to config option USE must be an array reference" 
+      die "Value supplied to config option USE must be an array reference"
         if ref($config_options->{USE}) ne 'ARRAY';
       @use = @{$config_options->{USE}};
     }
@@ -329,8 +342,10 @@ sub _write_pm {
     }
     print WR "\n";
     print WR "require Exporter;\n*import = \\&Exporter::import;\nrequire DynaLoader;\n\n";
-    print WR "\$", $o->{API}{module}, "::VERSION = '", $o->{API}{version}, "';\n\n"; 
-    print WR "DynaLoader::bootstrap ", $o->{API}{module}, " \$", $o->{API}{module}, "::VERSION;\n\n";
+    # Switch to xdg's recommendation for assigning version number
+    #print WR "\$", $o->{API}{module}, "::VERSION = '", $o->{API}{version}, "';\n\n";
+    print WR "our \$VERSION = '", $o->{API}{version}, "';\n\$VERSION = eval \$VERSION;\n";
+    print WR "DynaLoader::bootstrap ", $o->{API}{module}, " \$VERSION;\n\n";
 
     unless($config_options->{EXPORT_ALL}) {
       print WR "\@", $o->{API}{module}, "::EXPORT = ();\n";
@@ -338,7 +353,7 @@ sub _write_pm {
     else {
       print WR "\@", $o->{API}{module}, "::EXPORT = qw(\n";
       for(@{$o->{ILSM}{parser}{data}{functions}}) {
-        if ($_ =~ /^_/ && $_ !~ /^__/) {next} 
+        if ($_ =~ /^_/ && $_ !~ /^__/) {next}
         my $l = length($_);
         if($length + $l > $max) {
           print WR "\n", " " x $offset, "$_ ";
@@ -358,7 +373,7 @@ sub _write_pm {
     else {
       print WR "\@", $o->{API}{module}, "::EXPORT_OK = qw(\n";
       for(@{$o->{ILSM}{parser}{data}{functions}}) {
-        if ($_ =~ /^_/ && $_ !~ /^__/) {next} 
+        if ($_ =~ /^_/ && $_ !~ /^__/) {next}
         my $l = length($_);
         if($length + $l > $max) {
           print WR "\n", " " x $offset, "$_ ";
@@ -375,7 +390,7 @@ sub _write_pm {
     if($config_options->{EXPORT_TAGS_ALL}){
       print WR "\%", $o->{API}{module}, "::EXPORT_TAGS = (", $config_options->{EXPORT_TAGS_ALL}, " => [qw(\n";
       for(@{$o->{ILSM}{parser}{data}{functions}}) {
-        if ($_ =~ /^_/ && $_ !~ /^__/) {next} 
+        if ($_ =~ /^_/ && $_ !~ /^__/) {next}
         my $l = length($_);
         if($length + $l > $max) {
           print WR "\n", " " x $offset, "$_ ";
@@ -394,7 +409,7 @@ sub _write_pm {
     close(WR) or die "Couldn't close the .pm file after writing to it: $!";
 }
 
-##=========================## 
+##=========================##
 
 sub _write_manifest {
     my $m = shift;  # name of pm and xs files
@@ -412,16 +427,40 @@ sub _write_manifest {
     if($c->{WRITE_MAKEFILE_PL}) {
       print WRM "Makefile.PL\n";
     }
+    if($c->{T}){
+      print WRM "t/00load.t\n";
+    }
     close WRM or die "Can't close $bd/MANIFEST after writing: $!";
 }
 
-##=========================## 
+##=========================##
 
-##=========================## 
+sub _write_test_script {
+  use File::Path;
+  my $mod = $_[0];
+  my $path = "$_[1]/t";
+  unless(-d $path) {
+    if(!File::Path::make_path($path, {verbose => 1})) {die "Failed to create $path directory"};
+  }
 
-##=========================## 
+  print "Writing 00load.t in the $path directory\n";
+  open WRT, '>', "$path/00load.t" or die "Couldn't open $path/00load.t for writing: $!";
+  print WRT "## This file auto-generated by InlineX-C2XS-" . $InlineX::C2XS::VERSION . "\n\n";
+  print WRT "use strict;\nuse warnings;\n\n";
+  print WRT "print \"1..1\\n\";\n\n";
+  print WRT "eval{require $mod;};\n";
+  print WRT "if(\$\@) {\n  warn \"\\\$\\\@: \$\@\";\n  print \"not ok 1\\n\";\n}\n";
+  print WRT "else {print \"ok 1\\n\"}\n";
+  close WRT or die "Couldn't close $path/00load.t after writing: $!";
+}
 
-##=========================## 
+##=========================##
+
+*context         = \&InlineX::C2XS::Context::apply_context_args;
+
+##=========================##
+
+##=========================##
 
 1;
 
@@ -490,6 +529,75 @@ InlineX::C2XS - Convert from Inline C code to XS.
   As of version 0.19, a c2xs utility is also provided. It's just an
   Inline::C2XS wrapper - see 'c2xs --help'.
 
+  context($xs_file, \@func);
+   Call context() after running c2xs() if and only if you've used
+   the PRE_HEAD config option to define PERL_NO_GET_CONTEXT.
+   $xs_file is the location/name of the xs file that c2xs() wrote.
+   @func lists the functions to which the context args apply.
+   The rules are simple enough:
+
+    Define PERL_NO_GET_CONTEXT via PRE_HEAD option in $config_opts.
+
+    Don't specify the context args (pTHX, pTHX_, aTHX, aTHX_) in
+    your code at all. That is, just write the C code as though
+    PERL_NO_GET_CONTEXT had *not* been defined.
+
+    Write your function definitions on the one line. That is (eg),
+    instead of writing:
+
+      void
+      foo(SV* arg1)
+
+    write it as:
+
+      void foo(SV* arg1)
+
+    In your code, don't provide parentheses when not needed. For
+    example, instead of:
+
+      croak("Problem with one_func()");
+      warn("nother_func() might return something unwanted");
+
+    do:
+
+      croak("Problem with one_func");
+      warn("nother_func might return something unwanted");
+
+    Otherwise, the croak/warn messages might come out as:
+
+      croak("Problem with one_func(aTHX)");
+      warn("nother_func(aTHX) might return something unwanted");
+
+    Create an @func that lists the names of the functions that must
+    (or you wish to) take the context args. It's only the functions
+    that make use of perl's API that actually *have* to take the
+    context args.
+
+    Do:
+     c2xs($mod, $pack, $loc, $config_opts);
+     context("$loc/$pack.xs", \@funcs);
+
+    And check out the demo in demos/context. It's set up to build a
+    module whose XS file defines PERL_NO_GET_CONTEXT. In the
+    demos/context folder, run 'perl build.pl'. That perl script will
+    then create the XS file (and other files) needed for the
+    FOO module. The script first calls c2xs() to write FOO.xs (and
+    other files) in the FOO directory - then calls context() to
+    rewrite that XS file in accordance with the requirements of
+    PERL_NO_GET_CONTEXT.
+    Once that's done, you should be able to 'cd' to the FOO-0.01
+    folder and successfully run:
+
+      perl Makefile.PL
+      (d|n)make test
+      (d|n)make install (though I doubt you really want to do that.)
+      (d|n)make realclean
+
+    The context() sub is definitely breakable - patches welcome,
+    though effort would perhaps be better invested in getting this to
+    work via a more sane approach.
+
+
 =head1 DESCRIPTION
 
  Don't feed an actual Inline::C script to this module - it won't
@@ -527,18 +635,18 @@ InlineX::C2XS - Convert from Inline C code to XS.
  InlineX::C2XS looks for the C source file in ./src directory - expecting
  that the filename will be the same as what appears after the final '::'
  in the module name (with a '.c' extension). ie if your module is
- called My::Next::Mod the c2xs() function looks for a file ./src/Mod.c, 
+ called My::Next::Mod the c2xs() function looks for a file ./src/Mod.c,
  and creates a file named Mod.xs. Also created by the c2xs function, is
- the file 'INLINE.h' - but only if that file is needed. The generated 
+ the file 'INLINE.h' - but only if that file is needed. The generated
  xs file (and any other generated files will be written to the cwd unless
- the third argument supplied to c2xs() is a string specifying a valid 
+ the third argument supplied to c2xs() is a string specifying a valid
  directory - in which case the generated files(s) will be written to that
  directory.
 
- The created XS file, when packaged with the '.pm' file (which can be 
+ The created XS file, when packaged with the '.pm' file (which can be
  auto-generated by setting the WRITE_PM configuration key), an
  appropriate 'Makefile.PL' (which can also be auto-generated by setting
- the WRITE_MAKEFILE_PL hash key), and 'INLINE.h' (if it's needed), can be 
+ the WRITE_MAKEFILE_PL hash key), and 'INLINE.h' (if it's needed), can be
  used to build the module in the usual way - without any dependence
  upon the Inline::C module.
 
@@ -549,7 +657,7 @@ InlineX::C2XS - Convert from Inline C code to XS.
 
   AUTO_INCLUDE
    The value specified is automatically inserted into the generated XS
-   file. (Also, the specified include will be parsed and used iff 
+   file. (Also, the specified include will be parsed and used iff
    AUTOWRAP is set to a true value.) eg:
 
     AUTO_INCLUDE => '#include <my_header.h>',
@@ -571,7 +679,7 @@ InlineX::C2XS - Convert from Inline C code to XS.
 
  BOOT_F
    Specifies a file containing C code to be executed in the XS BOOT
-   section. 
+   section.
    eg:
 
     BOOT_F => '/home/me/boot_code.ext',
@@ -695,7 +803,7 @@ InlineX::C2XS - Convert from Inline C code to XS.
   ----
 
   MYEXTLIB
-   Specifies a user compiled object that should be linked in. 
+   Specifies a user compiled object that should be linked in.
    Corresponds to the MakeMaker parameter. It makes sense to assign this
    key only when WRITE_MAKEFILE_PL is set to a true value. eg:
 
@@ -710,7 +818,7 @@ InlineX::C2XS - Convert from Inline C code to XS.
   ----
 
   PREFIX
-   Specifies a prefix that will be automatically stripped from C 
+   Specifies a prefix that will be automatically stripped from C
    functions when they are bound to Perl. eg:
 
     PREFIX => 'FOO_',
@@ -723,6 +831,11 @@ InlineX::C2XS - Convert from Inline C code to XS.
    else that might have been added to AUTO_INCLUDE by the user). If the
    specified value identifies a file, the contents of that file will be
    inserted, otherwise the specified value is inserted.
+   If the specified value is a string of code, then since that string
+   ends in "\n" (as all code *should* terminate with at least one "\n"),
+   you will get a warning about an "Unsuccessful stat on filename
+   containing newline" when the test for the existence of a file that
+   matches the PRE_HEAD value is conducted.
 
     PRE_HEAD => $code_or_filename;
   ----
@@ -732,18 +845,44 @@ InlineX::C2XS - Convert from Inline C code to XS.
    The string to which PREREQ_PM is set will be reproduced as is in the
    generated Makefile.PL. That is, if you specify:
 
-   PREREQ_PM => "{'Some::Mod' => '1.23', 'Nother::Mod' => '3.21'}",
+    PREREQ_PM => "{'Some::Mod' => '1.23', 'Nother::Mod' => '3.21'}",
 
    then the WriteMakefile hash in the generated Makefile.PL will
    contain:
 
-   PREREQ_PM => {'Some::Mod' => '1.23', 'Nother::Mod' => '3.21'},
+    PREREQ_PM => {'Some::Mod' => '1.23', 'Nother::Mod' => '3.21'},
+  ----
+
+  PROTOTYPE
+   Corresponds to the XS keyword 'PROTOTYPE'. See the perlxs documentation
+   for both 'PROTOTYPES' and 'PROTOTYPE'. As an example, the following will
+   set the PROTOTYPE of the 'foo' function to '$', and disable prototyping
+   for the 'bar' function.
+
+    PROTOTYPE => {foo => '$', bar => 'DISABLE'}
+  ----
+
+  PROTOTYPES
+   Corresponds to the XS keyword 'PROTOTYPES'. Can take only values of
+   'ENABLE' or 'DISABLE'. (Contrary to XS, default value is 'DISABLE'). See
+   the perlxs documentation for both 'PROTOTYPES' and 'PROTOTYPE'.
+
+    PROTOTYPES => 'ENABLE';
   ----
 
   SRC_LOCATION
    Specifies a C file that contains the C source code. eg:
 
     SRC_LOCATION => '/home/me/source.ext',
+  ----
+
+  T
+   Is false by default but, When set to true will write a basic
+   t/00load.t test script in the build directory.
+   eg:
+
+    T => 1,
+
   ----
 
   TYPEMAPS
@@ -763,7 +902,7 @@ InlineX::C2XS - Convert from Inline C code to XS.
   ----
 
   USING
-   If you want Inline to use ParseRegExp.pm instead of RecDescent.pm for 
+   If you want Inline to use ParseRegExp.pm instead of RecDescent.pm for
    the parsing, then specify either:
 
     USING => ['ParseRegExp'],
@@ -789,8 +928,8 @@ InlineX::C2XS - Convert from Inline C code to XS.
 
   WRITE_PM
    Set this to a true value if you want a .pm file to be generated.
-   You'll also need to assign the 'VERSION' key appropriately. 
-   Note that it's a fairly simplistic .pm file - no POD, no perl 
+   You'll also need to assign the 'VERSION' key appropriately.
+   Note that it's a fairly simplistic .pm file - no POD, no perl
    subroutines, no exported subs (unless EXPORT_ALL or EXPORT_OK_ALL
    has been set), no warnings - but it will allow the utilisation of all of
    the XSubs in the XS file. eg:
@@ -800,10 +939,10 @@ InlineX::C2XS - Convert from Inline C code to XS.
 
 =head1 TODO
 
- Improve the t_makefile_pl test script. It currently provides strong 
+ Improve the t_makefile_pl test script. It currently provides strong
  indication that everything is working fine ... but is not conclusive.
- (This might take forever.)  
-  
+ (This might take forever.)
+
 =head1 BUGS
 
   None known - patches/rewrites/enhancements welcome.
@@ -811,7 +950,7 @@ InlineX::C2XS - Convert from Inline C code to XS.
 
 =head1 LICENSE
 
-  This program is free software; you may redistribute it and/or 
+  This program is free software; you may redistribute it and/or
   modify it under the same terms as Perl itself.
   Copyright 2006-2009, 2010-12,Sisyphus
 

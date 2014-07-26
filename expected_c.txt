@@ -122,7 +122,7 @@ void remove_add_polygon(SV* obj, SV* pg, int hole) {
 	dbg_p(("got my vl\n"));
 	if(p->num_contours > 0) {
 		gpc_vertex_list* c;
-		MALLOC(c, sizeof(gpc_vertex_list), 
+		MALLOC(c, sizeof(gpc_vertex_list),
 			"addable contour creation\n");
 		pts_to_vertex_list(pg, c);
 		dbg_p(("adding to existing\n"));
@@ -134,7 +134,7 @@ void remove_add_polygon(SV* obj, SV* pg, int hole) {
 		dbg_p(("setting hole\n"));
 		p->hole[0] = hole;
 		dbg_p(("making contour\n"));
-		MALLOC(p->contour, sizeof(gpc_vertex_list), 
+		MALLOC(p->contour, sizeof(gpc_vertex_list),
 			"contour creation\n");
 		pts_to_vertex_list(pg, &(p->contour[0]) );
 		dbg_p(("got %d vertices\n", p->contour[0].num_vertices));
@@ -188,7 +188,7 @@ void pts_to_vertex_list(SV* pg, gpc_vertex_list* vl) {
 		psv = av_fetch(pt, 1, 0);
 		val = *psv;
 		vl->vertex[p].y = SvNV(val);
-		dbg_p(("added %0.2f, %0.2f\n", 
+		dbg_p(("added %0.2f, %0.2f\n",
 			vl->vertex[p].x, vl->vertex[p].y
 			));
 	}
@@ -206,7 +206,7 @@ AV* vertex_list_to_pts(gpc_vertex_list* vl) {
 		av_push(pts, newRV_noinc((SV*) pt));
 		av_push(pt, newSVnv(vl->vertex[p].x));
 		av_push(pt, newSVnv(vl->vertex[p].y));
-		dbg_p(("point %d: %0.2f, %0.2f\n", 
+		dbg_p(("point %d: %0.2f, %0.2f\n",
 			p, vl->vertex[p].x, vl->vertex[p].y
 			));
 	}

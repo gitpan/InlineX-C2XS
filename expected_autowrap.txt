@@ -6,7 +6,8 @@
 #include "src/extra_simple.h"
 simple_double  simple(simple_double);
 extra_simple_double x_simple(extra_simple_double);
-MODULE = test	PACKAGE = test	
+
+MODULE = test	PACKAGE = test
 
 PROTOTYPES: DISABLE
 

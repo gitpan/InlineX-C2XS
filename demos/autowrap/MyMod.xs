@@ -3,7 +3,7 @@
 #include "XSUB.h"
 #include "INLINE.h"
 double erf(double);
-MODULE = MyMod	PACKAGE = MyMod	
+MODULE = MyMod	PACKAGE = MyMod
 
 PROTOTYPES: DISABLE
 

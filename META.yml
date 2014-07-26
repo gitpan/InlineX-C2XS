@@ -1,14 +1,19 @@
-# http://module-build.sourceforge.net/META-spec.html
-#XXXXXXX This is a prototype!!!  It will change in the future!!! XXXXX#
-name:         InlineX-C2XS
-version_from: C2XS.pm
-installdirs:  site
-requires:
-    Inline::C:                     0.47
-
+---
+abstract: unknown
+author:
+  - unknown
+build_requires: {}
+dynamic_config: 1
+generated_by: 'ExtUtils::MakeMaker version 6.6302, CPAN::Meta::Converter version 2.120630'
+license: perl
+meta-spec:
+  url: http://module-build.sourceforge.net/META-spec-v1.4.html
+  version: 1.4
+name: InlineX-C2XS
 no_index:
   directory:
-    - demos
-
-distribution_type: module
-generated_by: ExtUtils::MakeMaker version 6.30
+    - t
+    - inc
+resources:
+  repository: https://github.com/sisyphus/inlinex-c2xs.git
+version: 0.23

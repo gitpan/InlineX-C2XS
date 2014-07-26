@@ -8,7 +8,7 @@ use InlineX::C2XS qw(c2xs);
 # We can't have this test script write its files to the cwd - because that will
 # clobber the existing Makefile.PL. So ... we'll have it written to the cwd/src
 # directory. The following 3 lines of code are just my attempt to ensure that
-# the Makefile.PL does NOT get written to the cwd.  
+# the Makefile.PL does NOT get written to the cwd.
 my $cwd = getcwd;
 my $build_dir = "${cwd}/src";
 die "Can't run the t_makefile_pl.t test script" unless -d $build_dir;
@@ -260,11 +260,11 @@ if($ok eq 'a') {
   else {warn "5:*$pm[6]*\n"}
   if($pm[7] eq "\n") {$ok .= 'h'}
   else {warn "6:*$pm[7]*\n"}
-  if($pm[8] eq "\$test::VERSION = '0.42';\n") {$ok .= 'i'}
+  if($pm[8] eq "our \$VERSION = '0.42';\n") {$ok .= 'i'}
   else {warn "7:*$pm[8]*\n"}
-  if($pm[9] eq "\n") {$ok .= 'j'}
+  if($pm[9] eq "\$VERSION = eval \$VERSION;\n") {$ok .= 'j'}
   else {warn "8:*$pm[9]*\n"}
-  if($pm[10] eq "DynaLoader::bootstrap test \$test::VERSION;\n") {$ok .= 'k'}
+  if($pm[10] eq "DynaLoader::bootstrap test \$VERSION;\n") {$ok .= 'k'}
   else {warn "9:*$pm[10]*\n"}
   if($pm[11] eq "\n") {$ok .= 'l'}
   else {warn "10:*$pm[11]*\n"}

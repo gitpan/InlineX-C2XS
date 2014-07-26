@@ -30,7 +30,7 @@ while(<RD>) {
       warn "\$seen_headers: $seen_headers\n";
       }
     ok($seen_headers == 0 && $seen_target == 1, 'test 2');
-  }  
+  }
 }
 
 
@@ -60,7 +60,7 @@ while(<RD2>) {
       warn "\$seen_headers: $seen_headers\n";
       }
     ok($seen_headers == 0 && $seen_target == 1, 'test 4');
-  }  
+  }
 }
 
 if($seen_headers != 1) {

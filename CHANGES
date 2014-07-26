@@ -1,3 +1,9 @@
+- 0.23 ... Add 'T' config option.
+           Add metadata to InlineX::C2XS Makefile.PL.
+           Add Context.pm and demos/context.
+           Add PROTOTYPES and PROTOTYPE config options
+           Remove t/t_using.t (broken by Inline-C-0.62)
+
 - 0.22 ... Add DIST and MANIF config options.
 
 - 0.19 ... If EXPORT_TAGS_ALL is set, then it's now unnecessary
@@ -20,7 +26,7 @@
 
 - 0.15 ... Add config options EXPORT_ALL, EXPORT_OK_ALL and EXPORT_TAGS_ALL
 
-- 0.14 ... Requires Inline-0.45 or later. 
+- 0.14 ... Requires Inline-0.45 or later.
 
            Add tests for the use of ParseRegExp.pm.
 
@@ -43,8 +49,8 @@
 
            Minor correction to WRITE_PM
 
-           The C source code can now be alternatively provided by either a 
-           'CODE' or 'SRC_LOCATION' key. 
+           The C source code can now be alternatively provided by either a
+           'CODE' or 'SRC_LOCATION' key.
 
 - 0.12 ... Provide access to ParseRegExp.pm. (Untested, because ParseRegExp.pm
            is broken - see http://rt.cpan.org/Ticket/Display.html?id=6327 for
@@ -59,7 +65,7 @@
 
            Check that only valid config options have been passed via the "config
            options" argument.
-       
+
            Catch the error (and die) if a non-existent typemap is specified
            in the TYPEMAPS config option.
 
@@ -67,16 +73,16 @@
            was issued and the files written to the current working directory.
 
 - 0.10 ... Add coverage for the PREFIX and BOOT options.
-           Add coverage for CCFLAGS, LDDLFLAGS, MYEXTLIB and OPTIMIZE (and 
+           Add coverage for CCFLAGS, LDDLFLAGS, MYEXTLIB and OPTIMIZE (and
            test that they get passed to the generated Makefile.PL) Also check
-           that the CC, LD and MAKE parameters are passed on to the 
+           that the CC, LD and MAKE parameters are passed on to the
            generated Makefile.PL. Not sure how to utilise FILTERS.
-           (I won't do anything with it unless requested.) 
+           (I won't do anything with it unless requested.)
 
 - 0.09 ... Rewrite the t_makefile_pl test script. (It's now not a very
            conclusive test ... still needs further work ... though I think
            the WRITE_MAKEFILE_PL functionality is operating correctly.)
-           Add coverage (currently untested) for the CC, LD, and MAKE options. 
+           Add coverage (currently untested) for the CC, LD, and MAKE options.
            TODO: Add coverage for BOOT, CCFLAGS, FILTERS, LDDLFLAGS,
            MYEXTLIB, OPTIMIZE and PREFIX options.
 
