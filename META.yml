@@ -16,4 +16,4 @@ no_index:
     - inc
 resources:
   repository: https://github.com/sisyphus/inlinex-c2xs.git
-version: 0.23
+version: 0.24
